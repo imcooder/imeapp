@@ -1,0 +1,1 @@
+/* Unicode/Ansi stubs */
