@@ -92,7 +92,7 @@ HRESULT CTSFRead::Initialize()
 	HRESULT hr;	
 	if (FAILED(hr = CoCreateInstance(CLSID_TF_ThreadMgr, NULL, CLSCTX_INPROC_SERVER, IID_ITfThreadMgr, (void**)&pTM)))
 	{
-		RETAILMSG(MSG_LEVEL_DEBUG, L"[CTSFRead::Initialize] CoCreateInstance Failed[%08X]", hr);
+		RETAILMSG(MSG_LEVEL_WARNING, L"[CTSFRead::Initialize] CoCreateInstance Failed[%08X]", hr);
 		return hr;
 	}
 	m_pThreadMgr = pTM;	
@@ -202,12 +202,12 @@ BOOL CTSFRead::InitThreadMgrSink()
 	CComPtr<ITfSource>pSource;
 	if (FAILED(hr = m_pThreadMgr->QueryInterface(IID_ITfSource, (void **)&pSource)))
 	{
-		RETAILMSG(MSG_LEVEL_DEBUG, L"[CTSFRead::InitThreadMgrSink] QueryInterface Failed[%08X]", hr);
+		RETAILMSG(MSG_LEVEL_WARNING, L"[CTSFRead::InitThreadMgrSink] QueryInterface Failed[%08X]", hr);
 		return FALSE;
 	}
 	if (FAILED(hr = pSource->AdviseSink(IID_ITfThreadMgrEventSink, (ITfThreadMgrEventSink *)this, &m_dwThreadMgrEventSinkCookie)))
 	{
-		RETAILMSG(MSG_LEVEL_DEBUG, L"[CTSFRead::InitThreadMgrSink] AdviseSink Failed[%08X]", hr);
+		RETAILMSG(MSG_LEVEL_WARNING, L"[CTSFRead::InitThreadMgrSink] AdviseSink Failed[%08X]", hr);
 		// make sure we don't try to Unadvise m_dwThreadMgrEventSinkCookie later
 		m_dwThreadMgrEventSinkCookie = TF_INVALID_COOKIE;
 		return FALSE;
@@ -305,26 +305,6 @@ BOOL CTSFRead::InitTextEditSink(ITfDocumentMgr *pDocMgr)
 	}
 	return fRet;
 }
-
-//+---------------------------------------------------------------------------
-//
-// AppendCompositionText
-//
-//----------------------------------------------------------------------------
-
-void CTSFRead::AppendCompositionText(ITfRange *pRange, TfEditCookie ecReadOnly)
-{
-	BOOL fEmpty;
-	while (pRange->IsEmpty(ecReadOnly, &fEmpty) == S_OK && !fEmpty)
-	{	
-		WCHAR wstr[256 + 1] = {0};
-		ULONG ulcch = ARRAYSIZE(wstr) - 1;
-		ULONG uRead = 0;
-		pRange->GetText(ecReadOnly, TF_TF_MOVESTART, wstr, _countof(wstr) - 1, &uRead);
-		m_strCompositionText += wstr;
-	}
-}
-
 //+---------------------------------------------------------------------------
 //
 // ClearCompositionText
@@ -347,11 +327,34 @@ BOOL CTSFRead::CheckComposition(ITfContext *pContext, TfEditCookie ecReadOnly)
 	HRESULT hr;
 	CComPtr<ITfContextComposition>pContextComposition;	
 	ClearCompositionText();	
+	{
+		CComPtr<IEnumTfDisplayAttributeInfo> pEnumDA;
+		if (SUCCEEDED(hr = pContext->QueryInterface(IID_IEnumTfDisplayAttributeInfo,	(void **)&pEnumDA)))
+		{
+			pEnumDA->Reset();
+			CComPtr<ITfDisplayAttributeInfo> pInfo;
+			while (pEnumDA->Next(1, &pInfo, NULL) == S_OK)
+			{
+				TF_DISPLAYATTRIBUTE info = {};					
+				if (SUCCEEDED(hr = pInfo->GetAttributeInfo(&info)))
+				{
+					BSTR pDsp = NULL;
+					pInfo->GetDescription(&pDsp);
+					if (pDsp)
+					{
+						RETAILMSG(MSG_LEVEL_INFO, L"DisaplyAttr[%s]", pDsp);
+						SysFreeString(pDsp);
+					}					
+				}
+				pInfo.Release();
+			}
+		}
+	}
+	WCHAR szBuf[1024] = {0};
 	if (SUCCEEDED(hr = pContext->QueryInterface(IID_ITfContextComposition,	(void **)&pContextComposition)))
 	{
-		CComPtr<IEnumITfCompositionView>pEnumCompositionView;
-		hr = pContextComposition->EnumCompositions(&pEnumCompositionView);
-		if (hr == S_OK)
+		CComPtr<IEnumITfCompositionView>pEnumCompositionView;		
+		if (SUCCEEDED(hr = pContextComposition->EnumCompositions(&pEnumCompositionView)))
 		{
 			CComPtr<ITfCompositionView>pCompositionView;
 			while (pEnumCompositionView->Next(1, &pCompositionView, NULL) == S_OK)
@@ -359,12 +362,87 @@ BOOL CTSFRead::CheckComposition(ITfContext *pContext, TfEditCookie ecReadOnly)
 				CComPtr<ITfRange> pRange;				
 				if (SUCCEEDED(hr = pCompositionView->GetRange(&pRange)))
 				{
-					AppendCompositionText(pRange, ecReadOnly);					
+					BOOL fEmpty;
+					while (pRange->IsEmpty(ecReadOnly, &fEmpty) == S_OK && !fEmpty)
+					{
+						ULONG uRead = 0;
+						pRange->GetText(ecReadOnly, TF_TF_MOVESTART, szBuf, _countof(szBuf) - 1, &uRead);
+						m_strCompositionText += szBuf;
+					}
+					TF_DISPLAYATTRIBUTE info = {
+						{ TF_CT_NONE, 0 },			// text color
+						{ TF_CT_NONE, 0 },			// background color (TF_CT_NONE => app default)
+						TF_LS_NONE,                             // underline style
+						FALSE,                                  // underline boldness
+						{ TF_CT_NONE, 0 },                      // underline color
+						TF_ATTR_OTHER									// attribute info};
+					};
+					if (SUCCEEDED(GetDispAttrFromRange(pContext, pRange, ecReadOnly, &info)))
+					{
+						RETAILMSG(MSG_LEVEL_INFO, TEXT("TSF Range Attr: textColor[%d-%08X] bgColor[%d-%08X] underlineStype[%d] underlineBold[%d] underlineColor[%d-%08X] attr[%d]"), info.crText.nIndex, info.crText.cr, info.crBk.nIndex, info.crBk.cr, info.crLine, info.fBoldLine, info.crLine.nIndex, info.crLine.cr, info.bAttr);
+					}
 				}
 				pCompositionView.Release();
 			}
 		}		
 	}
+	CGlobalData::GetInstance().m_strCompositionText = m_strCompositionText;
+	CGlobalData::GetInstance().NotifyUpdateUI();
 	RETAILMSG(MSG_LEVEL_INFO, TEXT("TSF CompStr[%X][%s]"), m_strCompositionText.length(), m_strCompositionText.c_str());
 	return TRUE;
+}
+
+
+HRESULT CTSFRead::GetDispAttrFromRange(ITfContext *pContext, ITfRange *pRange, TfEditCookie ec, TF_DISPLAYATTRIBUTE *pDispAttr)
+{
+	HRESULT     hr;
+	//Create the category manager. 
+	CComPtr<ITfCategoryMgr>pCategoryMgr;
+	if(FAILED(hr = CoCreateInstance(  CLSID_TF_CategoryMgr,	NULL, CLSCTX_INPROC_SERVER, IID_ITfCategoryMgr, (LPVOID*)&pCategoryMgr)))
+	{
+		RETAILMSG(MSG_LEVEL_WARNING, TEXT("[GetDispAttrFromRange::CTSFRead] CoCreateInstance CLSID_TF_CategoryMgr Failed[%08X]"), hr);
+		return hr;
+	}
+
+	//Create the display attribute manager. 
+	ITfDisplayAttributeMgr  *pDispMgr;
+	if(FAILED(hr = CoCreateInstance( CLSID_TF_DisplayAttributeMgr,	NULL, CLSCTX_INPROC_SERVER, IID_ITfDisplayAttributeMgr, (LPVOID*)&pDispMgr)))
+	{
+		RETAILMSG(MSG_LEVEL_WARNING, TEXT("[GetDispAttrFromRange::CTSFRead] CoCreateInstance CLSID_TF_DisplayAttributeMgr Failed[%08X]"), hr);		
+		return hr;
+	}
+
+	//Get the display attribute property. 
+	CComPtr<ITfProperty> pProp;	
+	if(SUCCEEDED(hr = pContext->GetProperty(GUID_PROP_ATTRIBUTE, &pProp)))
+	{
+		VARIANT var;
+		VariantInit(&var);		
+		if(S_OK == (hr = pProp->GetValue(ec, pRange, &var)))  //Returns S_FALSE if the range is not completely covered by the property.  
+		{
+			if(VT_I4 == var.vt)
+			{
+				//The property is a guidatom. 
+				GUID    guid;
+				//Convert the guidatom into a GUID. 				
+				if(SUCCEEDED(hr = pCategoryMgr->GetGUID((TfGuidAtom)var.lVal, &guid)))
+				{
+					CComPtr<ITfDisplayAttributeInfo>pDispInfo;
+					//Get the display attribute info object for this attribute.
+					if(SUCCEEDED(hr = pDispMgr->GetDisplayAttributeInfo(guid, &pDispInfo, NULL)))
+					{
+						//Get the display attribute info. 
+						hr = pDispInfo->GetAttributeInfo(pDispAttr);						
+					}
+				}
+			}
+			else
+			{
+				//An error occurred; GUID_PROP_ATTRIBUTE must always be VT_I4. 
+				hr = E_FAIL;
+			}
+			VariantClear(&var);
+		}		
+	}
+	return hr;
 }

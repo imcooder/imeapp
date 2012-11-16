@@ -65,7 +65,7 @@ LRESULT HandleEndComposition(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	dwResultClsLen      = 0;
 	dwResultReadStrLen  = 0;
 	dwResultReadClsLen  = 0;
-	InvalidateRect(hWnd,NULL,TRUE);
+	CGlobalData::GetInstance().NotifyUpdateUI();
 
 	return 1;
 }
@@ -112,28 +112,28 @@ LRESULT HandleComposition(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	hIMC = ImmGetContext(hWnd);	
 	/*
 	{
-		CANDIDATEFORM cdf = {0};
+	CANDIDATEFORM cdf = {0};
 
-		cdf.dwIndex = 0;
-		cdf.dwStyle = CFS_CANDIDATEPOS;
-		cdf.ptCurrentPos.x = 500;
-		cdf.ptCurrentPos.y = 200;
-		ImmSetCandidateWindow(hIMC, &cdf);
-		UINT i;
-		for (i = 0; i < 4; i++)
-		{
-			if (!ImmGetCandidateWindow(hIMC, i, &cdf))
-			{
-				continue;
-			}				
-			cdf.dwStyle = CFS_CANDIDATEPOS;
-			ImmSetCandidateWindow(hIMC, &cdf);
-		}		
-		COMPOSITIONFORM cpf = {0};
-		cpf.dwStyle = CFS_POINT;
-		cpf.ptCurrentPos.x = 500;
-		cpf.ptCurrentPos.y = 200;
-		ImmSetCompositionWindow(hIMC, &cpf);
+	cdf.dwIndex = 0;
+	cdf.dwStyle = CFS_CANDIDATEPOS;
+	cdf.ptCurrentPos.x = 500;
+	cdf.ptCurrentPos.y = 200;
+	ImmSetCandidateWindow(hIMC, &cdf);
+	UINT i;
+	for (i = 0; i < 4; i++)
+	{
+	if (!ImmGetCandidateWindow(hIMC, i, &cdf))
+	{
+	continue;
+	}				
+	cdf.dwStyle = CFS_CANDIDATEPOS;
+	ImmSetCandidateWindow(hIMC, &cdf);
+	}		
+	COMPOSITIONFORM cpf = {0};
+	cpf.dwStyle = CFS_POINT;
+	cpf.ptCurrentPos.x = 500;
+	cpf.ptCurrentPos.y = 200;
+	ImmSetCompositionWindow(hIMC, &cpf);
 	}
 	*/
 	{
@@ -148,10 +148,10 @@ LRESULT HandleComposition(HWND hWnd, WPARAM wParam, LPARAM lParam)
 			ON_LEAVE_1(ImmUnlockIMCC(hIMCC), HIMCC, hIMCC);
 			COMPOSITIONSTRING* cs = (COMPOSITIONSTRING*)pIMCC;			
 			{
-				DEBUGMSG(1, _T("COMPOSITIONSTRING size[%08X]"), cs->dwSize);
-				DEBUGMSG(1, _T("Address: dwCompReadAttrOffset=%08X,dwCompReadClauseOffset=%08X, dwCompReadStrOffset=%08X, dwCompAttrOffset=%08X, dwCompClauseOffset=%08X, dwCompStrOffset=%08X dwResultReadClauseOffset=%08X dwResultReadStrOffset=%08X dwResultClauseOffset=%08X dwResultStrOffset=%08X dwPrivateOffset=%08X"), cs->dwCompReadAttrOffset, cs->dwCompReadClauseOffset, cs->dwCompReadStrOffset, cs->dwCompAttrOffset, cs->dwCompClauseOffset, cs->dwCompStrOffset, cs->dwResultReadClauseOffset, cs->dwResultReadStrOffset, cs->dwResultClauseOffset, cs->dwResultStrOffset, cs->dwPrivateOffset);
+				RETAILMSG(MSG_LEVEL_DEBUG, _T("COMPOSITIONSTRING size[%08X]"), cs->dwSize);
+				RETAILMSG(MSG_LEVEL_DEBUG, _T("Address: dwCompReadAttrOffset=%08X,dwCompReadClauseOffset=%08X, dwCompReadStrOffset=%08X, dwCompAttrOffset=%08X, dwCompClauseOffset=%08X, dwCompStrOffset=%08X dwResultReadClauseOffset=%08X dwResultReadStrOffset=%08X dwResultClauseOffset=%08X dwResultStrOffset=%08X dwPrivateOffset=%08X"), cs->dwCompReadAttrOffset, cs->dwCompReadClauseOffset, cs->dwCompReadStrOffset, cs->dwCompAttrOffset, cs->dwCompClauseOffset, cs->dwCompStrOffset, cs->dwResultReadClauseOffset, cs->dwResultReadStrOffset, cs->dwResultClauseOffset, cs->dwResultStrOffset, cs->dwPrivateOffset);
 				TCHAR szBuf[512] = {0};
-				DEBUGMSG(1, TEXT("dwCompReadAttrLen %d\n"), cs->dwCompReadAttrLen);
+				RETAILMSG(MSG_LEVEL_DEBUG, TEXT("dwCompReadAttrLen %d\n"), cs->dwCompReadAttrLen);
 				if (cs->dwCompReadAttrLen)
 				{				
 					StringCchPrintf(szBuf, _countof(szBuf), _T("CompReadAttr:"));
@@ -162,9 +162,9 @@ LRESULT HandleComposition(HWND hWnd, WPARAM wParam, LPARAM lParam)
 						StringCchPrintf(szTmp, _countof(szTmp), _T("%02X-"), pbAttr[i]);
 						StringCchCat(szBuf, _countof(szBuf), szTmp);
 					}
-					DEBUGMSG(1, _T("%s\n"), szBuf);
+					RETAILMSG(MSG_LEVEL_DEBUG, _T("%s\n"), szBuf);
 				}
-				DEBUGMSG(1, _T("dwCompReadClauseLen %d\n"), cs->dwCompReadClauseLen);
+				RETAILMSG(MSG_LEVEL_DEBUG, _T("dwCompReadClauseLen %d\n"), cs->dwCompReadClauseLen);
 				if (cs->dwCompReadClauseLen)
 				{				
 					StringCchPrintf(szBuf, _countof(szBuf), _T("CompReadClause:"));
@@ -175,17 +175,17 @@ LRESULT HandleComposition(HWND hWnd, WPARAM wParam, LPARAM lParam)
 						StringCchPrintf(szTmp, _countof(szTmp), _T("%02X-"), pbAttr[i]);
 						StringCchCat(szBuf, _countof(szBuf), szTmp);
 					}
-					DEBUGMSG(1, _T("%s\n"), szBuf);
+					RETAILMSG(MSG_LEVEL_DEBUG, _T("%s\n"), szBuf);
 				}
 
-				DEBUGMSG(1, _T("dwCompReadStrLen %d\n"), cs->dwCompReadStrLen);
+				RETAILMSG(MSG_LEVEL_DEBUG, _T("dwCompReadStrLen %d\n"), cs->dwCompReadStrLen);
 				if (cs->dwCompReadStrLen)
 				{
 					LPCTSTR pszStr = (LPCTSTR)((LPBYTE)cs + cs->dwCompReadStrOffset);					
-					DEBUGMSG(1, _T("CompReadStr:%s\n"), pszStr);
+					RETAILMSG(MSG_LEVEL_DEBUG, _T("CompReadStr:%s\n"), pszStr);
 				}
 
-				DEBUGMSG(1, _T("dwCompAttrLen %d\n"), cs->dwCompAttrLen);
+				RETAILMSG(MSG_LEVEL_DEBUG, _T("dwCompAttrLen %d\n"), cs->dwCompAttrLen);
 				if (cs->dwCompAttrLen)
 				{				
 					StringCchPrintf(szBuf, _countof(szBuf), _T("CompAttr:"));
@@ -196,10 +196,10 @@ LRESULT HandleComposition(HWND hWnd, WPARAM wParam, LPARAM lParam)
 						StringCchPrintf(szTmp, _countof(szTmp), _T("%02X-"), pbAttr[i]);
 						StringCchCat(szBuf, _countof(szBuf), szTmp);
 					}
-					DEBUGMSG(1, _T("%s\n"), szBuf);
+					RETAILMSG(MSG_LEVEL_DEBUG, _T("%s\n"), szBuf);
 				}
 
-				DEBUGMSG(1, _T("dwCompClauseLen %d\n"), cs->dwCompClauseLen);
+				RETAILMSG(MSG_LEVEL_DEBUG, _T("dwCompClauseLen %d\n"), cs->dwCompClauseLen);
 				if (cs->dwCompClauseLen)
 				{				
 					StringCchPrintf(szBuf, _countof(szBuf), _T("CompClaus:"));
@@ -210,41 +210,41 @@ LRESULT HandleComposition(HWND hWnd, WPARAM wParam, LPARAM lParam)
 						StringCchPrintf(szTmp, _countof(szTmp), _T("%02X-"), pbAttr[i]);
 						StringCchCat(szBuf, _countof(szBuf), szTmp);
 					}
-					DEBUGMSG(1, _T("%s\n"), szBuf);
+					RETAILMSG(MSG_LEVEL_DEBUG, _T("%s\n"), szBuf);
 				}
 
-				DEBUGMSG(1, _T("dwCompStrLen %d\n"), cs->dwCompStrLen);
+				RETAILMSG(MSG_LEVEL_DEBUG, _T("dwCompStrLen %d\n"), cs->dwCompStrLen);
 				if (cs->dwCompStrLen)
 				{
 					LPCTSTR pszStr = (LPCTSTR)((LPBYTE)cs + cs->dwCompStrOffset);					
-					DEBUGMSG(1, _T("CompStr:%s\n"), pszStr);
+					RETAILMSG(MSG_LEVEL_DEBUG, _T("CompStr:%s\n"), pszStr);
 				}
 
-				DEBUGMSG(1, _T("dwCursorPos %d\n"), cs->dwCursorPos);
-				DEBUGMSG(1, _T("dwDeltaStart %d\n"), cs->dwDeltaStart);				
+				RETAILMSG(MSG_LEVEL_DEBUG, _T("dwCursorPos %d\n"), cs->dwCursorPos);
+				RETAILMSG(MSG_LEVEL_DEBUG, _T("dwDeltaStart %d\n"), cs->dwDeltaStart);				
 
-				DEBUGMSG(1, _T("dwResultReadClauseLen %d\n"), cs->dwResultReadClauseLen);
+				RETAILMSG(MSG_LEVEL_DEBUG, _T("dwResultReadClauseLen %d\n"), cs->dwResultReadClauseLen);
 				if (cs->dwResultReadClauseLen)
 				{				
 					//StringCchPrintf(szBuf, _countof(szBuf), _T("CompStr:"));
 					//LPCTSTR pszStr = (LPCTSTR)((LPBYTE)cs + cs->dwCompStrOffset);					
-					//DEBUGMSG(1, _T("%s\n"), pszStr);
+					//RETAILMSG(MSG_LEVEL_DEBUG, _T("%s\n"), pszStr);
 				}
-				DEBUGMSG(1, _T("dwResultReadStrLen %d\n"), cs->dwResultReadStrLen);
+				RETAILMSG(MSG_LEVEL_DEBUG, _T("dwResultReadStrLen %d\n"), cs->dwResultReadStrLen);
 				if (cs->dwResultReadStrLen)
 				{
 					LPCTSTR pszStr = (LPCTSTR)((LPBYTE)cs + cs->dwResultReadStrOffset);					
-					DEBUGMSG(1, _T("%s\n"), pszStr);
+					RETAILMSG(MSG_LEVEL_DEBUG, _T("%s\n"), pszStr);
 				}
-				DEBUGMSG(1, _T("dwResultClauseLen %d\n"), cs->dwResultClauseLen);
-				
-				DEBUGMSG(1, _T("dwResultStrLen %d\n"), cs->dwResultStrLen);
+				RETAILMSG(MSG_LEVEL_DEBUG, _T("dwResultClauseLen %d\n"), cs->dwResultClauseLen);
+
+				RETAILMSG(MSG_LEVEL_DEBUG, _T("dwResultStrLen %d\n"), cs->dwResultStrLen);
 				if (cs->dwResultStrLen)
 				{
 					LPCTSTR pszStr = (LPCTSTR)((LPBYTE)cs + cs->dwResultStrOffset);					
-					DEBUGMSG(1, _T("%s\n"), pszStr);
+					RETAILMSG(MSG_LEVEL_DEBUG, _T("%s\n"), pszStr);
 				}
-				DEBUGMSG(1, _T("dwPrivateSize %d\n"), cs->dwPrivateSize);
+				RETAILMSG(MSG_LEVEL_DEBUG, _T("dwPrivateSize %d\n"), cs->dwPrivateSize);
 			}
 		}
 	}
@@ -428,8 +428,7 @@ LRESULT HandleComposition(HWND hWnd, WPARAM wParam, LPARAM lParam)
 
 	if (fRedraw)
 	{
-		InvalidateRect(hWnd,NULL,TRUE);
-		UpdateWindow(hWnd);
+		CGlobalData::GetInstance().NotifyUpdateUI();
 	}
 	return 1;
 }
@@ -460,9 +459,7 @@ LRESULT HandleChar(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	StringCchPrintf(szCode, _countof(szCode), _T("{%c},"), wParam);	
 	StringCchCat(szPaintResult, _countof(szPaintResult), szCode);
 
-	InvalidateRect(hWnd,NULL,TRUE);
-	UpdateWindow(hWnd);
-
+	CGlobalData::GetInstance().NotifyUpdateUI();
 	return 1;
 }
 
@@ -491,74 +488,72 @@ LRESULT HandleIMEChar(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	StringCchPrintf(szCode, _countof(szCode), _T("[%c],"), wParam);	
 	StringCchCat(szPaintResult, _countof(szPaintResult), szCode);
 
-	InvalidateRect(hWnd,NULL,TRUE);
-	UpdateWindow(hWnd);
-
+	CGlobalData::GetInstance().NotifyUpdateUI();
 	return 1;
 }
 
 LRESULT HandleNotify(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HIMC hIMC = NULL;
-	BOOL fOpen = FALSE;	
+	BOOL fOpen = FALSE;
+	hIMC = ImmGetContext(hWnd);
+	ON_LEAVE_2(ImmReleaseContext(hWnd,hIMC), HWND, hWnd, HIMC, hIMC);
 	switch (wParam)
 	{
 	case IMN_SETCANDIDATEPOS:
 		{
-			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("IMN_SETCANDIDATEPOS[%08X][%08X]"), wParam, lParam);
+			RETAILMSG(MSG_LEVEL_DEBUG, TEXT("IMN_SETCANDIDATEPOS[%08X][%08X]"), wParam, lParam);
 		}
 		break;
 	case IMN_SETCOMPOSITIONWINDOW:
 		{
-			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("IMN_SETCOMPOSITIONWINDOW[%08X][%08X]"), wParam, lParam);
+			RETAILMSG(MSG_LEVEL_DEBUG, TEXT("IMN_SETCOMPOSITIONWINDOW[%08X][%08X]"), wParam, lParam);
 		}
 		break;
 	case IMN_OPENSTATUSWINDOW: /* fall-through */
 		{
-			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("IMN_OPENSTATUSWINDOW[%08X][%08X]"), wParam, lParam);
+			RETAILMSG(MSG_LEVEL_DEBUG, TEXT("IMN_OPENSTATUSWINDOW[%08X][%08X]"), wParam, lParam);
 		}
 		break;
 	case IMN_CLOSESTATUSWINDOW:
 		{
-			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("IMN_CLOSESTATUSWINDOW[%08X][%08X]"), wParam, lParam);
+			RETAILMSG(MSG_LEVEL_DEBUG, TEXT("IMN_CLOSESTATUSWINDOW[%08X][%08X]"), wParam, lParam);
 		}
 		break;
 	case IMN_SETOPENSTATUS:
 		{
-			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("IMN_SETOPENSTATUS[%08X][%08X]"), wParam, lParam);
-			SetStatusItems(hWnd);
-
-			hIMC = ImmGetContext(hWnd);
-			fOpen = ImmGetOpenStatus(hIMC);
-			UpdateShowOpenStatusButton(fOpen);
-
-			ImmReleaseContext(hWnd,hIMC);
+			RETAILMSG(MSG_LEVEL_DEBUG, TEXT("IMN_SETOPENSTATUS[%08X][%08X]"), wParam, lParam);
+			if (hIMC)
+			{
+				SetStatusItems(hWnd);
+				fOpen = ImmGetOpenStatus(hIMC);
+				UpdateShowOpenStatusButton(fOpen);	
+			}				
 		}
 		break;
-
 	case IMN_SETCONVERSIONMODE:
 		{
-			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("IMN_SETCONVERSIONMODE[%08X][%08X]"), wParam, lParam);
-			hIMC = ImmGetContext(hWnd);
-			fOpen = ImmGetOpenStatus(hIMC);
-			ImmGetConversionStatus(hIMC,&dwConversionMode,&dwSentenceMode);
-			if (fOpen)
+			RETAILMSG(MSG_LEVEL_DEBUG, TEXT("IMN_SETCONVERSIONMODE[%08X][%08X]"), wParam, lParam);
+			if (hIMC)
 			{
-				SetConvModeParts(dwConversionMode);
-				UpdateModeButton(dwConversionMode);
-			}
-			else
-			{
-				ClearConvModeParts();
-			}
-			ImmReleaseContext(hWnd,hIMC);
+				fOpen = ImmGetOpenStatus(hIMC);
+				ImmGetConversionStatus(hIMC,&dwConversionMode,&dwSentenceMode);
+				if (fOpen)
+				{
+					SetConvModeParts(dwConversionMode);
+					UpdateModeButton(dwConversionMode);
+				}
+				else
+				{
+					ClearConvModeParts();
+				}
+			}						
 		}
 		break;
-
 	case IMN_OPENCANDIDATE:
 		{		
-			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("IMN_OPENCANDIDATE[%08X][%08X]"), wParam, lParam);
-			if (!fShowCand || (lParam != 0x01))
+			RETAILMSG(MSG_LEVEL_DEBUG, TEXT("IMN_OPENCANDIDATE[%08X][%08X]"), wParam, lParam);
+			if ((lParam != 0x01))
 			{
 				if (fdwProperty & IME_PROP_SPECIAL_UI)
 				{
@@ -567,38 +562,29 @@ LRESULT HandleNotify(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				}
 				else if (fdwProperty & IME_PROP_AT_CARET)
 				{
-					CANDIDATEFORM cdf;
-					HIMC          hIMC;
-
-					hIMC = ImmGetContext(hWnd);				
+					CANDIDATEFORM cdf;			
 					cdf.dwIndex = 0;
 					cdf.dwStyle = CFS_CANDIDATEPOS;
 					cdf.ptCurrentPos.x = 500;//ptImeUIPos.x;
 					cdf.ptCurrentPos.y = ptImeUIPos.y;
-					ImmSetCandidateWindow(hIMC,&cdf);
-
-					ImmReleaseContext(hWnd,hIMC);
+					ImmSetCandidateWindow(hIMC, &cdf);					
 				}
 				else
 				{
 					// Normally, we only need to set the composition window
 					// position for a near caret IME
 				}
-
 				return (DefWindowProc(hWnd, message, wParam, lParam));
 			}
 		}
 		break;
 	case IMN_CHANGECANDIDATE:
 		{
-			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("IMN_CHANGECANDIDATE[%08X][%08X]"), wParam, lParam);	
-#ifdef _DEBUG
-			{			
+			if(hIMC)
+			{
+				RETAILMSG(MSG_LEVEL_DEBUG, TEXT("IMN_CHANGECANDIDATE[%08X][%08X]"), wParam, lParam);
 				DWORD dwSize;
 				LPCANDIDATELIST lpC;
-
-				hIMC = ImmGetContext(hWnd);
-
 				UINT uIdx = 0;	
 				if (lParam)
 				{							
@@ -618,110 +604,105 @@ LRESULT HandleNotify(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				{
 					lpC = (LPCANDIDATELIST)GlobalAlloc(GPTR, dwSize);
 					ImmGetCandidateList(hIMC, uIdx, lpC, dwSize);
-					DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("DumpCandList[%d]"), uIdx);				
-					DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("dwSize[%08X] dwCount [%d] dwSelection [%d] dwPageStart [%d] dwPageSize [%d] dwStype[%d]"), lpC->dwSize, lpC->dwCount, lpC->dwSelection, lpC->dwPageStart, lpC->dwPageSize, lpC->dwStyle);				
+					RETAILMSG(MSG_LEVEL_DEBUG, TEXT("DumpCandList[%d]"), uIdx);				
+					RETAILMSG(MSG_LEVEL_DEBUG, TEXT("dwSize[%08X] dwCount [%d] dwSelection [%d] dwPageStart [%d] dwPageSize [%d] dwStype[%d]"), lpC->dwSize, lpC->dwCount, lpC->dwSelection, lpC->dwPageStart, lpC->dwPageSize, lpC->dwStyle);				
 					GlobalFree((HANDLE)lpC);
-				}
-			}
-#endif
-			if (fShowCand && (lParam == 0x01))
-			{
-				DWORD dwSize;
-
-				if (!lpCandList)
-					lpCandList = (LPCANDIDATELIST)GlobalAlloc(GPTR,sizeof(CANDIDATELIST));
-
-				hIMC = ImmGetContext(hWnd);
-				if (dwSize = ImmGetCandidateList(hIMC, 0x0, NULL, 0))
+				}				
+				if (lParam == 0x01)
 				{
-					GlobalFree((HANDLE)lpCandList);
-					lpCandList = (LPCANDIDATELIST)GlobalAlloc(GPTR,dwSize);
-
-					ImmGetCandidateList(hIMC, 0x0, lpCandList, dwSize);
+					DWORD dwSize;
+					if (!lpCandList)
+					{
+						lpCandList = (LPCANDIDATELIST)GlobalAlloc(GPTR,sizeof(CANDIDATELIST));
+					}				
+					if (dwSize = ImmGetCandidateList(hIMC, 0x0, NULL, 0))
+					{
+						GlobalFree((HANDLE)lpCandList);
+						lpCandList = (LPCANDIDATELIST)GlobalAlloc(GPTR,dwSize);
+						ImmGetCandidateList(hIMC, 0x0, lpCandList, dwSize);
+					}
+					else
+					{
+						memset(lpCandList, 0, sizeof(CANDIDATELIST));
+					}
+					CGlobalData::GetInstance().NotifyUpdateUI();
 				}
 				else
 				{
-					memset(lpCandList, 0, sizeof(CANDIDATELIST));
+					return (DefWindowProc(hWnd, message, wParam, lParam));
 				}
-
-				InvalidateRect(hWndCandList,NULL,TRUE);
-				UpdateWindow(hWndCandList);
-
-
-				ImmReleaseContext(hWnd,hIMC);
-			}
-			else
-			{
-				return (DefWindowProc(hWnd, message, wParam, lParam));
 			}
 		}
 		break;
-
 	case IMN_CLOSECANDIDATE:
 		{
-			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("IMN_CLOSECANDIDATE[%08X][%08X]"), wParam, lParam);
-			if (fShowCand && (lParam == 0x01))
+			if (hIMC)
 			{
-				if (!lpCandList)
+				RETAILMSG(MSG_LEVEL_DEBUG, TEXT("IMN_CLOSECANDIDATE[%08X][%08X]"), wParam, lParam);
+				if (lParam == 0x01)
 				{
-					lpCandList = (LPCANDIDATELIST)GlobalAlloc(GPTR,sizeof(CANDIDATELIST));
+					if (!lpCandList)
+					{
+						lpCandList = (LPCANDIDATELIST)GlobalAlloc(GPTR,sizeof(CANDIDATELIST));
+					}
+					memset(lpCandList, 0, sizeof(CANDIDATELIST));
+					CGlobalData::GetInstance().NotifyUpdateUI();
 				}
-
-				memset(lpCandList, 0, sizeof(CANDIDATELIST));
-				InvalidateRect(hWndCandList,NULL,TRUE);
-				UpdateWindow(hWndCandList);
+				else
+				{
+					return (DefWindowProc(hWnd, message, wParam, lParam));
+				}
 			}
-			else
-			{
-				return (DefWindowProc(hWnd, message, wParam, lParam));
-			}
-		}		
+		}
 		break;
 	case IMN_GUIDELINE:
 		{
-			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("IMN_GUIDELINE[%08X][%08X]"), wParam, lParam);
-			DWORD dwLevel = ImmGetGuideLine(hIMC, GGL_LEVEL, NULL, 0);
-			INPUTCONTEXT* pInput = NULL;
-			pInput = (INPUTCONTEXT*)ImmLockIMC(hIMC);
-			if (pInput)
+			if(hIMC)
 			{
-				GUIDELINE* pGuidLine = (GUIDELINE*)ImmLockIMCC(pInput->hGuideLine);
-				if (pGuidLine)
+				RETAILMSG(MSG_LEVEL_DEBUG, TEXT("IMN_GUIDELINE[%08X][%08X]"), wParam, lParam);
+				DWORD dwLevel = ImmGetGuideLine(hIMC, GGL_LEVEL, NULL, 0);
+				INPUTCONTEXT* pInput = NULL;
+				pInput = (INPUTCONTEXT*)ImmLockIMC(hIMC);
+				if (pInput)
 				{
-					StringCchPrintf(szGuideLine, _countof(szGuideLine), _T("%08X-%08X-%08X-%08X-%08X-%08X-%08X\n"), pGuidLine->dwSize, pGuidLine->dwLevel, pGuidLine->dwIndex, pGuidLine->dwStrLen, pGuidLine->dwStrOffset, pGuidLine->dwPrivateSize, pGuidLine->dwPrivateOffset);					
+					GUIDELINE* pGuidLine = (GUIDELINE*)ImmLockIMCC(pInput->hGuideLine);
+					if (pGuidLine)
+					{
+						StringCchPrintf(szGuideLine, _countof(szGuideLine), _T("%08X-%08X-%08X-%08X-%08X-%08X-%08X\n"), pGuidLine->dwSize, pGuidLine->dwLevel, pGuidLine->dwIndex, pGuidLine->dwStrLen, pGuidLine->dwStrOffset, pGuidLine->dwPrivateSize, pGuidLine->dwPrivateOffset);					
+					}
 				}
+				return (DefWindowProc(hWnd, message, wParam, lParam));
 			}
-			return (DefWindowProc(hWnd, message, wParam, lParam));
 		}
 		break;
 	case NI_CHANGECANDIDATELIST:
 		{
-			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("NI_CHANGECANDIDATELIST[%08X][%08X]"), wParam, lParam);
+			RETAILMSG(MSG_LEVEL_DEBUG, TEXT("NI_CHANGECANDIDATELIST[%08X][%08X]"), wParam, lParam);
 		}
 		break;
 	case NI_SELECTCANDIDATESTR:
 		{
-			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("NI_SELECTCANDIDATESTR[%08X][%08X]"), wParam, lParam);
+			RETAILMSG(MSG_LEVEL_DEBUG, TEXT("NI_SELECTCANDIDATESTR[%08X][%08X]"), wParam, lParam);
 		}
 		break;	
 	case NI_FINALIZECONVERSIONRESULT:
 		{
-			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("NI_FINALIZECONVERSIONRESULT[%08X][%08X]"), wParam, lParam);
+			RETAILMSG(MSG_LEVEL_DEBUG, TEXT("NI_FINALIZECONVERSIONRESULT[%08X][%08X]"), wParam, lParam);
 		}
 		break;  
 	case NI_SETCANDIDATE_PAGESTART:
 		{
-			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("NI_SETCANDIDATE_PAGESTART[%08X][%08X]"), wParam, lParam);
+			RETAILMSG(MSG_LEVEL_DEBUG, TEXT("NI_SETCANDIDATE_PAGESTART[%08X][%08X]"), wParam, lParam);
 		}
 		break; 
 	case NI_SETCANDIDATE_PAGESIZE:
 		{
-			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("NI_SETCANDIDATE_PAGESIZE[%08X][%08X]"), wParam, lParam);
+			RETAILMSG(MSG_LEVEL_DEBUG, TEXT("NI_SETCANDIDATE_PAGESIZE[%08X][%08X]"), wParam, lParam);
 		}
 		break;
 	case NI_IMEMENUSELECTED:
 		{
-			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("NI_IMEMENUSELECTED[%08X][%08X]"), wParam, lParam);
+			RETAILMSG(MSG_LEVEL_DEBUG, TEXT("NI_IMEMENUSELECTED[%08X][%08X]"), wParam, lParam);
 		}
 		break;
 	default:

@@ -196,19 +196,12 @@ LRESULT HandleChangeAttr(HWND hWnd, BOOL fNext)
 	}
 	else
 	{
-#ifdef DEBUG
-		OutputDebugString(TEXT("Can not call ImmSetCompositionString\r\n"));
+		RETAILMSG(MSG_LEVEL_WARNING, TEXT("Can not call ImmSetCompositionString\r\n"));
 		bRet = TRUE;
-#endif
 	}
-
-#ifdef DEBUG
 	if (!bRet)
 	{
-		OutputDebugString(TEXT("ImmSetCompositionString return FALSE\r\n"));
+		RETAILMSG(MSG_LEVEL_WARNING, TEXT("ImmSetCompositionString return FALSE\r\n"));
 	}
-#endif
-
-
 	return 1;
 }

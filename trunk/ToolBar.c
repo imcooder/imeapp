@@ -178,10 +178,7 @@ void UpdateShowOpenStatusButton(BOOL fOpen)
 void UpdateShowCandButton()
 {
 
-	SendMessage(hWndToolBar, 
-		TB_CHANGEBITMAP, 
-		IDM_SHOWCAND, 
-		MAKELPARAM((fShowCand ? IDTBB_SHOWCAND : IDTBB_NOSHOWCAND), 0));
+	SendMessage(hWndToolBar, TB_CHANGEBITMAP, IDM_SHOWCAND, MAKELPARAM((CGlobalData::GetInstance().m_isShowCand ? IDTBB_SHOWCAND : IDTBB_NOSHOWCAND), 0));
 	return;
 }
 
