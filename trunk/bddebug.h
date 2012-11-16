@@ -147,7 +147,7 @@
 extern "C"
 {
 #endif	
-	void WINAPI XTrace(ULONG_PTR, LPCWSTR, ...);		
+	void WINAPI XTrace(ULONG_PTR, LPCTSTR, ...);		
 #ifdef __cplusplus
 }
 #endif

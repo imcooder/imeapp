@@ -51,7 +51,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 			DispatchMessage(&msg); 
 		}
 	}
-
+	OnExitInstance(hInstance);
 exit_func:
 	if (bSuccess)
 	{
@@ -157,10 +157,15 @@ BOOL InitInstance(HINSTANCE hInstance, INT nCmdShow)
 	/* display each windows */
 	ShowWindow (hWndMain, nCmdShow);
 	UpdateWindow (hWndMain);
-
+	
+	g_tsfReader.Initialize();
 	return TRUE;
 }
-
+BOOL OnExitInstance(HINSTANCE hInstance)
+{
+	g_tsfReader.Uninitialize();
+	return TRUE;
+}
 /**********************************************************************/
 /*                                                                    */
 /*    InitIMEUIPosition(HWND)                                         */
@@ -249,11 +254,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 		InitIMEUIPosition(hWndCompStr);
 
 
-		if (!(hWndCandList = CreateWindowEx(WS_EX_CLIENTEDGE,
-			TEXT("CandListWndClass"), NULL,
-			WS_CHILD | WS_VISIBLE, 
-			0, 0, 0, 0,
-			hWnd, NULL, hInst, NULL)))
+		if (!(hWndCandList = CreateWindowEx(WS_EX_CLIENTEDGE,	TEXT("CandListWndClass"), NULL,	WS_CHILD | WS_VISIBLE, 	0, 0, 0, 0,	hWnd, NULL, hInst, NULL)))
 			return FALSE;
 
 		ShowWindow(hWndCompStr, SW_SHOW);
@@ -431,6 +432,11 @@ LRESULT CALLBACK CompStrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			HandleChar(hWnd,wParam,lParam);
 		}
 		break;
+	case WM_IME_CHAR:
+		{
+			HandleIMEChar(hWnd, wParam, lParam);
+		}
+		break;
 	case WM_LBUTTONUP:  /* fall-through */
 	case WM_RBUTTONUP:
 		{
@@ -461,7 +467,7 @@ LRESULT CALLBACK CompStrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 	case WM_IME_SELECT:
 		{
-			DEBUGMSG(1, L"WM_IME_SELECT: %d-%08X\n", wParam, lParam);
+			DEBUGMSG(1, _T("WM_IME_SELECT: %d-%08X\n"), wParam, lParam);
 			return 0;
 		}
 		break;
@@ -488,7 +494,7 @@ LRESULT CALLBACK CompStrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 	case WM_IME_STARTCOMPOSITION:
 		{
-			DEBUGMSG(1, L"WM_IME_ENDCOMPOSITION: %08X-%08X\n", wParam, lParam);
+			DEBUGMSG(MSG_LEVEL_DEBUG, _T("WM_IME_STARTCOMPOSITION: [%08X][%08X]"), wParam, lParam);
 			HandleStartComposition(hWnd,wParam,lParam);
 			// pass this message to DefWindowProc for IME_PROP_SPECIAL_UI
 			// and not IME_PROP_AT_CARET IMEs
@@ -510,7 +516,7 @@ LRESULT CALLBACK CompStrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 	case WM_IME_ENDCOMPOSITION:
 		{
-			DEBUGMSG(1, L"WM_IME_ENDCOMPOSITION: %08X-%08X\n", wParam, lParam);
+			DEBUGMSG(1, _T("WM_IME_ENDCOMPOSITION: %08X-%08X\n"), wParam, lParam);
 			HandleEndComposition(hWnd,wParam,lParam);
 
 			// pass this message to DefWindowProc for IME_PROP_SPECIAL_UI
@@ -533,8 +539,8 @@ LRESULT CALLBACK CompStrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 	case WM_IME_COMPOSITION:
 		{
-			DEBUGMSG(1, L"WM_IME_COMPOSITION: %08X-%08X\n", wParam, lParam);
-			HandleComposition(hWnd,wParam,lParam);
+			DEBUGMSG(1, _T("WM_IME_COMPOSITION: %08X-%08X\n"), wParam, lParam);
+			HandleComposition(hWnd, wParam, lParam);
 			if (fdwProperty & IME_PROP_SPECIAL_UI)
 			{
 				return (DefWindowProc(hWnd, message, wParam, lParam));
@@ -549,7 +555,11 @@ LRESULT CALLBACK CompStrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 			}
 		}		
 		break;
-
+	case WM_IME_COMPOSITIONFULL:
+		{
+			DEBUGMSG(1, _T("WM_IME_COMPOSITIONFULL: %08X-%08X\n"), wParam, lParam);
+		}
+		break;
 	case WM_PAINT:
 		{
 			HandlePaint(hWnd,wParam,lParam);
@@ -557,7 +567,7 @@ LRESULT CALLBACK CompStrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 		break;
 	case WM_IME_NOTIFY:
 		{
-			DEBUGMSG(1, L"WM_IME_NOTIFY: %08X-%08X\n", wParam, lParam);
+			DEBUGMSG(1, _T("WM_IME_NOTIFY: %08X-%08X\n"), wParam, lParam);
 			LRESULT lRet;
 			lRet = HandleNotify(hWnd, message, wParam, lParam);
 			// pass this message to DefWindowProc for IME_PROP_SPECIAL_UI
@@ -589,7 +599,7 @@ LRESULT CALLBACK CompStrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 	case WM_INPUTLANGCHANGE:
 		{
 			fdwProperty = ImmGetProperty(GetKeyboardLayout(0), IGP_PROPERTY);
-			DEBUGMSG(1, L"%08X\n", fdwProperty);
+			DEBUGMSG(1, _T("%08X\n"), fdwProperty);
 
 			if (hIMC = ImmGetContext(hWnd))
 			{			
@@ -692,47 +702,47 @@ LRESULT CALLBACK AboutDlg(HWND hDlg, unsigned message, WPARAM wParam, LPARAM lPa
 	return (FALSE);
 }
 
-VOID ParseProperty(ULONG_PTR dwProperty, std::wstring&strProperty)
+VOID ParseProperty(ULONG_PTR dwProperty, tstring&strProperty)
 {	
 	if (dwProperty & IME_PROP_COMPLETE_ON_UNSELECT)
 	{
-		strProperty += L"|COMPLETE_ON_UNSELECT";
+		strProperty += _T("COMPLETE_ON_UNSELECT");
 	}
 	if (dwProperty & IME_PROP_UNICODE)
 	{
-		strProperty += L"|UNICODE";
+		strProperty += _T("|UNICODE");
 	}
 	if (dwProperty & IME_PROP_CANDLIST_START_FROM_1)
 	{
-		strProperty += L"|CANDLIST_START_FROM_1";
+		strProperty += _T("|CANDLIST_START_FROM_1");
 	}
 	if (dwProperty & IME_PROP_SPECIAL_UI)
 	{
-		strProperty += L"|SPECIAL_UI";
+		strProperty += _T("|SPECIAL_UI");
 	}
 	if (dwProperty & IME_PROP_AT_CARET)
 	{
-		strProperty += L"|AT_CARET";
+		strProperty += _T("|AT_CARET");
 	}
 	if (dwProperty & IME_PROP_NO_KEYS_ON_CLOSE)
 	{
-		strProperty += L"|NO_KEYS_ON_CLOSE";
+		strProperty += _T("|NO_KEYS_ON_CLOSE");
 	}
 	if (dwProperty & IME_PROP_NEED_ALTKEY)
 	{
-		strProperty += L"|NEED_ALTKEY";
+		strProperty += _T("|NEED_ALTKEY");
 	}
 	if (dwProperty & IME_PROP_IGNORE_UPKEYS)
 	{
-		strProperty += L"|IGNORE_UPKEYS";
+		strProperty += _T("|IGNORE_UPKEYS");
 	}
 	if (dwProperty & IME_PROP_KBD_CHAR_FIRST)
 	{
-		strProperty += L"|KBD_CHAR_FIRST";
+		strProperty += _T("|KBD_CHAR_FIRST");
 	}
 	if (dwProperty & IME_PROP_END_UNLOAD)
 	{
-		strProperty += L"|END_UNLOAD";
+		strProperty += _T("|END_UNLOAD");
 	}
 }
 

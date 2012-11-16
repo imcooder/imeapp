@@ -110,6 +110,144 @@ LRESULT HandleComposition(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	BOOL fRedraw = FALSE;
 
 	hIMC = ImmGetContext(hWnd);	
+	/*
+	{
+		CANDIDATEFORM cdf = {0};
+
+		cdf.dwIndex = 0;
+		cdf.dwStyle = CFS_CANDIDATEPOS;
+		cdf.ptCurrentPos.x = 500;
+		cdf.ptCurrentPos.y = 200;
+		ImmSetCandidateWindow(hIMC, &cdf);
+		UINT i;
+		for (i = 0; i < 4; i++)
+		{
+			if (!ImmGetCandidateWindow(hIMC, i, &cdf))
+			{
+				continue;
+			}				
+			cdf.dwStyle = CFS_CANDIDATEPOS;
+			ImmSetCandidateWindow(hIMC, &cdf);
+		}		
+		COMPOSITIONFORM cpf = {0};
+		cpf.dwStyle = CFS_POINT;
+		cpf.ptCurrentPos.x = 500;
+		cpf.ptCurrentPos.y = 200;
+		ImmSetCompositionWindow(hIMC, &cpf);
+	}
+	*/
+	{
+		LPINPUTCONTEXT lpIMC = NULL;
+		LPCANDIDATEINFO lpCandInfo = NULL;
+		lpIMC = ImmLockIMC(hIMC);
+		ON_LEAVE_1(ImmUnlockIMC(hIMC), HIMC, hIMC);	
+		if (lpIMC)
+		{
+			HIMCC hIMCC = lpIMC->hCompStr;
+			LPVOID pIMCC = ImmLockIMCC(hIMCC);
+			ON_LEAVE_1(ImmUnlockIMCC(hIMCC), HIMCC, hIMCC);
+			COMPOSITIONSTRING* cs = (COMPOSITIONSTRING*)pIMCC;			
+			{
+				DEBUGMSG(1, _T("COMPOSITIONSTRING size[%08X]"), cs->dwSize);
+				DEBUGMSG(1, _T("Address: dwCompReadAttrOffset=%08X,dwCompReadClauseOffset=%08X, dwCompReadStrOffset=%08X, dwCompAttrOffset=%08X, dwCompClauseOffset=%08X, dwCompStrOffset=%08X dwResultReadClauseOffset=%08X dwResultReadStrOffset=%08X dwResultClauseOffset=%08X dwResultStrOffset=%08X dwPrivateOffset=%08X"), cs->dwCompReadAttrOffset, cs->dwCompReadClauseOffset, cs->dwCompReadStrOffset, cs->dwCompAttrOffset, cs->dwCompClauseOffset, cs->dwCompStrOffset, cs->dwResultReadClauseOffset, cs->dwResultReadStrOffset, cs->dwResultClauseOffset, cs->dwResultStrOffset, cs->dwPrivateOffset);
+				TCHAR szBuf[512] = {0};
+				DEBUGMSG(1, TEXT("dwCompReadAttrLen %d\n"), cs->dwCompReadAttrLen);
+				if (cs->dwCompReadAttrLen)
+				{				
+					StringCchPrintf(szBuf, _countof(szBuf), _T("CompReadAttr:"));
+					LPBYTE pbAttr = (LPBYTE)cs + cs->dwCompReadAttrOffset;
+					for (int i = 0; i < cs->dwCompReadAttrLen; i ++)
+					{
+						TCHAR szTmp[8] = {0};
+						StringCchPrintf(szTmp, _countof(szTmp), _T("%02X-"), pbAttr[i]);
+						StringCchCat(szBuf, _countof(szBuf), szTmp);
+					}
+					DEBUGMSG(1, _T("%s\n"), szBuf);
+				}
+				DEBUGMSG(1, _T("dwCompReadClauseLen %d\n"), cs->dwCompReadClauseLen);
+				if (cs->dwCompReadClauseLen)
+				{				
+					StringCchPrintf(szBuf, _countof(szBuf), _T("CompReadClause:"));
+					LPBYTE pbAttr = (LPBYTE)cs + cs->dwCompReadClauseOffset;
+					for (int i = 0; i < cs->dwCompReadClauseLen; i ++)
+					{
+						TCHAR szTmp[8] = {0};
+						StringCchPrintf(szTmp, _countof(szTmp), _T("%02X-"), pbAttr[i]);
+						StringCchCat(szBuf, _countof(szBuf), szTmp);
+					}
+					DEBUGMSG(1, _T("%s\n"), szBuf);
+				}
+
+				DEBUGMSG(1, _T("dwCompReadStrLen %d\n"), cs->dwCompReadStrLen);
+				if (cs->dwCompReadStrLen)
+				{
+					LPCTSTR pszStr = (LPCTSTR)((LPBYTE)cs + cs->dwCompReadStrOffset);					
+					DEBUGMSG(1, _T("CompReadStr:%s\n"), pszStr);
+				}
+
+				DEBUGMSG(1, _T("dwCompAttrLen %d\n"), cs->dwCompAttrLen);
+				if (cs->dwCompAttrLen)
+				{				
+					StringCchPrintf(szBuf, _countof(szBuf), _T("CompAttr:"));
+					LPBYTE pbAttr = (LPBYTE)cs + cs->dwCompAttrOffset;
+					for (int i = 0; i < cs->dwCompAttrLen; i ++)
+					{
+						TCHAR szTmp[8] = {0};
+						StringCchPrintf(szTmp, _countof(szTmp), _T("%02X-"), pbAttr[i]);
+						StringCchCat(szBuf, _countof(szBuf), szTmp);
+					}
+					DEBUGMSG(1, _T("%s\n"), szBuf);
+				}
+
+				DEBUGMSG(1, _T("dwCompClauseLen %d\n"), cs->dwCompClauseLen);
+				if (cs->dwCompClauseLen)
+				{				
+					StringCchPrintf(szBuf, _countof(szBuf), _T("CompClaus:"));
+					LPBYTE pbAttr = (LPBYTE)cs + cs->dwCompClauseOffset;
+					for (int i = 0; i < cs->dwCompClauseLen; i ++)
+					{
+						TCHAR szTmp[8] = {0};
+						StringCchPrintf(szTmp, _countof(szTmp), _T("%02X-"), pbAttr[i]);
+						StringCchCat(szBuf, _countof(szBuf), szTmp);
+					}
+					DEBUGMSG(1, _T("%s\n"), szBuf);
+				}
+
+				DEBUGMSG(1, _T("dwCompStrLen %d\n"), cs->dwCompStrLen);
+				if (cs->dwCompStrLen)
+				{
+					LPCTSTR pszStr = (LPCTSTR)((LPBYTE)cs + cs->dwCompStrOffset);					
+					DEBUGMSG(1, _T("CompStr:%s\n"), pszStr);
+				}
+
+				DEBUGMSG(1, _T("dwCursorPos %d\n"), cs->dwCursorPos);
+				DEBUGMSG(1, _T("dwDeltaStart %d\n"), cs->dwDeltaStart);				
+
+				DEBUGMSG(1, _T("dwResultReadClauseLen %d\n"), cs->dwResultReadClauseLen);
+				if (cs->dwResultReadClauseLen)
+				{				
+					//StringCchPrintf(szBuf, _countof(szBuf), _T("CompStr:"));
+					//LPCTSTR pszStr = (LPCTSTR)((LPBYTE)cs + cs->dwCompStrOffset);					
+					//DEBUGMSG(1, _T("%s\n"), pszStr);
+				}
+				DEBUGMSG(1, _T("dwResultReadStrLen %d\n"), cs->dwResultReadStrLen);
+				if (cs->dwResultReadStrLen)
+				{
+					LPCTSTR pszStr = (LPCTSTR)((LPBYTE)cs + cs->dwResultReadStrOffset);					
+					DEBUGMSG(1, _T("%s\n"), pszStr);
+				}
+				DEBUGMSG(1, _T("dwResultClauseLen %d\n"), cs->dwResultClauseLen);
+				
+				DEBUGMSG(1, _T("dwResultStrLen %d\n"), cs->dwResultStrLen);
+				if (cs->dwResultStrLen)
+				{
+					LPCTSTR pszStr = (LPCTSTR)((LPBYTE)cs + cs->dwResultStrOffset);					
+					DEBUGMSG(1, _T("%s\n"), pszStr);
+				}
+				DEBUGMSG(1, _T("dwPrivateSize %d\n"), cs->dwPrivateSize);
+			}
+		}
+	}
 	if (lParam & GCS_COMPSTR)
 	{
 		dwCompStrLen = ImmGetCompositionString(hIMC, GCS_COMPSTR, szCompStr, sizeof(szCompStr));
@@ -271,7 +409,7 @@ LRESULT HandleComposition(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	{		
 		DWORD dwPos = ImmGetCompositionString(hIMC, GCS_CURSORPOS, NULL, 0);
 		fRedraw = TRUE;		
-		StringCchPrintf(szCursor, _countof(szCursor), L"%d", dwPos);
+		StringCchPrintf(szCursor, _countof(szCursor), _T("%d"), dwPos);
 	}
 	else
 	{
@@ -281,7 +419,7 @@ LRESULT HandleComposition(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	{		
 		DWORD dwDelta = ImmGetCompositionString(hIMC, GCS_DELTASTART, NULL, 0);
 		fRedraw = TRUE;		
-		StringCchPrintf(szDelta, _countof(szDelta), L"%d", dwDelta);
+		StringCchPrintf(szDelta, _countof(szDelta), _T("%d"), dwDelta);
 	}
 	else
 	{
@@ -303,10 +441,6 @@ LRESULT HandleChar(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	HDC hIC = NULL;
 	SIZE sz0, sz1;
 	HFONT hOldFont = NULL;
-	LPTSTR lp = NULL;
-	// is the previous received char is a DBCS lead byte char ?
-	static BOOL fIsPrevLeadByte = FALSE;
-
 	GetClientRect(hWnd,&rc);
 	hIC = CreateIC(TEXT("DISPLAY"), NULL, NULL, NULL);
 	hOldFont = (HFONT)SelectObject(hIC,hFont);
@@ -322,46 +456,9 @@ LRESULT HandleChar(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	SelectObject(hIC,hOldFont);
 	DeleteDC(hIC);
 
-	lp = szPaintResult + lstrlen(szPaintResult);
-
-#ifndef USEWAPI
-	if (fIsPrevLeadByte) 
-	{
-		// remove , and append second byte for showing DBCS char
-		if (*(lp - 1) == ',') 
-		{
-			lp--;
-		}
-	}
-#endif
-
-	// append second byte
-	*lp++ = (TCHAR)(BYTE)wParam;
-	*lp++ = TEXT(',');
-	*lp++ = TEXT('\0');
-
-	lp = szPaintResultRead + lstrlen(szPaintResultRead);
-
-#ifndef USEWAPI
-	if (fIsPrevLeadByte) 
-	{
-		// remove , and append second byte for showing DBCS char
-		if (*(lp - 1) == ',') 
-		{
-			lp--;
-		}
-
-		fIsPrevLeadByte = FALSE;
-	} 
-	else 
-	{
-		fIsPrevLeadByte = IsDBCSLeadByte((BYTE)wParam);
-	}
-#endif
-
-	*lp++ = (BYTE)wParam;
-	*lp++ = TEXT(',');
-	*lp++ = TEXT('\0');
+	TCHAR szCode[16] = {0};
+	StringCchPrintf(szCode, _countof(szCode), _T("{%c},"), wParam);	
+	StringCchCat(szPaintResult, _countof(szPaintResult), szCode);
 
 	InvalidateRect(hWnd,NULL,TRUE);
 	UpdateWindow(hWnd);
@@ -369,157 +466,220 @@ LRESULT HandleChar(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	return 1;
 }
 
+LRESULT HandleIMEChar(HWND hWnd, WPARAM wParam, LPARAM lParam)
+{
+	RECT rc = {0};
+	HDC hIC = NULL;
+	SIZE sz0, sz1;
+	HFONT hOldFont = NULL;
+	GetClientRect(hWnd,&rc);
+	hIC = CreateIC(TEXT("DISPLAY"), NULL, NULL, NULL);
+	hOldFont = (HFONT)SelectObject(hIC,hFont);
+
+	GetTextExtentPoint(hIC,szPaintResult,lstrlen(szPaintResult),&sz0);
+	GetTextExtentPoint(hIC,szResultStr,lstrlen(szResultStr),&sz1);
+
+	if (sz0.cx + sz1.cx >= rc.right)
+	{
+		szPaintResult[0] = TEXT('\0');
+		szPaintResultRead[0] = TEXT('\0');
+	}
+	SelectObject(hIC,hOldFont);
+	DeleteDC(hIC);
+
+	TCHAR szCode[16] = {0};
+	StringCchPrintf(szCode, _countof(szCode), _T("[%c],"), wParam);	
+	StringCchCat(szPaintResult, _countof(szPaintResult), szCode);
+
+	InvalidateRect(hWnd,NULL,TRUE);
+	UpdateWindow(hWnd);
+
+	return 1;
+}
 
 LRESULT HandleNotify(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	HIMC hIMC = NULL;
-	BOOL fOpen = FALSE;
-
-	
+	BOOL fOpen = FALSE;	
 	switch (wParam)
 	{
-	case IMN_OPENSTATUSWINDOW: /* fall-through */
-	case IMN_CLOSESTATUSWINDOW:
+	case IMN_SETCANDIDATEPOS:
+		{
+			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("IMN_SETCANDIDATEPOS[%08X][%08X]"), wParam, lParam);
+		}
 		break;
-
+	case IMN_SETCOMPOSITIONWINDOW:
+		{
+			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("IMN_SETCOMPOSITIONWINDOW[%08X][%08X]"), wParam, lParam);
+		}
+		break;
+	case IMN_OPENSTATUSWINDOW: /* fall-through */
+		{
+			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("IMN_OPENSTATUSWINDOW[%08X][%08X]"), wParam, lParam);
+		}
+		break;
+	case IMN_CLOSESTATUSWINDOW:
+		{
+			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("IMN_CLOSESTATUSWINDOW[%08X][%08X]"), wParam, lParam);
+		}
+		break;
 	case IMN_SETOPENSTATUS:
-		SetStatusItems(hWnd);
+		{
+			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("IMN_SETOPENSTATUS[%08X][%08X]"), wParam, lParam);
+			SetStatusItems(hWnd);
 
-		hIMC = ImmGetContext(hWnd);
-		fOpen = ImmGetOpenStatus(hIMC);
-		UpdateShowOpenStatusButton(fOpen);
+			hIMC = ImmGetContext(hWnd);
+			fOpen = ImmGetOpenStatus(hIMC);
+			UpdateShowOpenStatusButton(fOpen);
 
-		ImmReleaseContext(hWnd,hIMC);
+			ImmReleaseContext(hWnd,hIMC);
+		}
 		break;
 
 	case IMN_SETCONVERSIONMODE:
-		hIMC = ImmGetContext(hWnd);
-		fOpen = ImmGetOpenStatus(hIMC);
-		ImmGetConversionStatus(hIMC,&dwConversionMode,&dwSentenceMode);
-		if (fOpen)
 		{
-			SetConvModeParts(dwConversionMode);
-			UpdateModeButton(dwConversionMode);
+			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("IMN_SETCONVERSIONMODE[%08X][%08X]"), wParam, lParam);
+			hIMC = ImmGetContext(hWnd);
+			fOpen = ImmGetOpenStatus(hIMC);
+			ImmGetConversionStatus(hIMC,&dwConversionMode,&dwSentenceMode);
+			if (fOpen)
+			{
+				SetConvModeParts(dwConversionMode);
+				UpdateModeButton(dwConversionMode);
+			}
+			else
+			{
+				ClearConvModeParts();
+			}
+			ImmReleaseContext(hWnd,hIMC);
 		}
-		else
-		{
-			ClearConvModeParts();
-		}
-		ImmReleaseContext(hWnd,hIMC);
 		break;
 
 	case IMN_OPENCANDIDATE:
-		if (!fShowCand || (lParam != 0x01))
-		{
-			if (fdwProperty & IME_PROP_SPECIAL_UI)
+		{		
+			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("IMN_OPENCANDIDATE[%08X][%08X]"), wParam, lParam);
+			if (!fShowCand || (lParam != 0x01))
 			{
-				// Normally, we only need to set the composition window
-				// position for a special UI IME
+				if (fdwProperty & IME_PROP_SPECIAL_UI)
+				{
+					// Normally, we only need to set the composition window
+					// position for a special UI IME
+				}
+				else if (fdwProperty & IME_PROP_AT_CARET)
+				{
+					CANDIDATEFORM cdf;
+					HIMC          hIMC;
+
+					hIMC = ImmGetContext(hWnd);				
+					cdf.dwIndex = 0;
+					cdf.dwStyle = CFS_CANDIDATEPOS;
+					cdf.ptCurrentPos.x = 500;//ptImeUIPos.x;
+					cdf.ptCurrentPos.y = ptImeUIPos.y;
+					ImmSetCandidateWindow(hIMC,&cdf);
+
+					ImmReleaseContext(hWnd,hIMC);
+				}
+				else
+				{
+					// Normally, we only need to set the composition window
+					// position for a near caret IME
+				}
+
+				return (DefWindowProc(hWnd, message, wParam, lParam));
 			}
-			else if (fdwProperty & IME_PROP_AT_CARET)
-			{
-				CANDIDATEFORM cdf;
-				HIMC          hIMC;
+		}
+		break;
+	case IMN_CHANGECANDIDATE:
+		{
+			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("IMN_CHANGECANDIDATE[%08X][%08X]"), wParam, lParam);	
+#ifdef _DEBUG
+			{			
+				DWORD dwSize;
+				LPCANDIDATELIST lpC;
 
 				hIMC = ImmGetContext(hWnd);
 
-				cdf.dwIndex = 0;
-				cdf.dwStyle = CFS_CANDIDATEPOS;
-				cdf.ptCurrentPos.x = ptImeUIPos.x;
-				cdf.ptCurrentPos.y = ptImeUIPos.y;
-				ImmSetCandidateWindow(hIMC,&cdf);
+				UINT uIdx = 0;	
+				if (lParam)
+				{							
+					for (int i = 0; i < 32; i ++)
+					{
+						if (lParam & (0x1 << i))
+						{
+							break;
+						}
+						else
+						{
+							uIdx ++;
+						}
+					}
+				}
+				if (dwSize = ImmGetCandidateList(hIMC, uIdx, NULL, 0))
+				{
+					lpC = (LPCANDIDATELIST)GlobalAlloc(GPTR, dwSize);
+					ImmGetCandidateList(hIMC, uIdx, lpC, dwSize);
+					DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("DumpCandList[%d]"), uIdx);				
+					DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("dwSize[%08X] dwCount [%d] dwSelection [%d] dwPageStart [%d] dwPageSize [%d] dwStype[%d]"), lpC->dwSize, lpC->dwCount, lpC->dwSelection, lpC->dwPageStart, lpC->dwPageSize, lpC->dwStyle);				
+					GlobalFree((HANDLE)lpC);
+				}
+			}
+#endif
+			if (fShowCand && (lParam == 0x01))
+			{
+				DWORD dwSize;
+
+				if (!lpCandList)
+					lpCandList = (LPCANDIDATELIST)GlobalAlloc(GPTR,sizeof(CANDIDATELIST));
+
+				hIMC = ImmGetContext(hWnd);
+				if (dwSize = ImmGetCandidateList(hIMC, 0x0, NULL, 0))
+				{
+					GlobalFree((HANDLE)lpCandList);
+					lpCandList = (LPCANDIDATELIST)GlobalAlloc(GPTR,dwSize);
+
+					ImmGetCandidateList(hIMC, 0x0, lpCandList, dwSize);
+				}
+				else
+				{
+					memset(lpCandList, 0, sizeof(CANDIDATELIST));
+				}
+
+				InvalidateRect(hWndCandList,NULL,TRUE);
+				UpdateWindow(hWndCandList);
+
 
 				ImmReleaseContext(hWnd,hIMC);
 			}
 			else
 			{
-				// Normally, we only need to set the composition window
-				// position for a near caret IME
+				return (DefWindowProc(hWnd, message, wParam, lParam));
 			}
-
-			return (DefWindowProc(hWnd, message, wParam, lParam));
-		}
-
-	case IMN_CHANGECANDIDATE:
-
-#ifdef _DEBUG
-		{
-			TCHAR szDev[80];
-			DWORD dwSize;
-			LPCANDIDATELIST lpC;
-
-			hIMC = ImmGetContext(hWnd);
-			if (dwSize = ImmGetCandidateList(hIMC,0x0,NULL,0))
-			{
-				lpC = (LPCANDIDATELIST)GlobalAlloc(GPTR,dwSize);
-
-				ImmGetCandidateList(hIMC,0x0,lpC,dwSize);
-
-				OutputDebugString(TEXT("DumpCandList!!!\r\n"));
-				StringCchPrintf((LPTSTR)szDev,ARRAYSIZE(szDev),TEXT("dwCount %d\r\n"),lpC->dwCount);
-				OutputDebugString((LPTSTR)szDev);
-				StringCchPrintf((LPTSTR)szDev,ARRAYSIZE(szDev),TEXT("dwSelection %d\r\n"),lpC->dwSelection);
-				OutputDebugString((LPTSTR)szDev);
-				StringCchPrintf((LPTSTR)szDev,ARRAYSIZE(szDev),TEXT("dwPageStart %d\r\n"),lpC->dwPageStart);
-				OutputDebugString((LPTSTR)szDev);
-				StringCchPrintf((LPTSTR)szDev,ARRAYSIZE(szDev),TEXT("dwPageSize %d\r\n"),lpC->dwPageSize);
-				OutputDebugString((LPTSTR)szDev);
-				GlobalFree((HANDLE)lpC);
-			}
-		}
-#endif
-		if (fShowCand && (lParam == 0x01))
-		{
-			DWORD dwSize;
-
-			if (!lpCandList)
-				lpCandList = (LPCANDIDATELIST)GlobalAlloc(GPTR,sizeof(CANDIDATELIST));
-
-			hIMC = ImmGetContext(hWnd);
-			if (dwSize = ImmGetCandidateList(hIMC,0x0,NULL,0))
-			{
-				GlobalFree((HANDLE)lpCandList);
-				lpCandList = (LPCANDIDATELIST)GlobalAlloc(GPTR,dwSize);
-
-				ImmGetCandidateList(hIMC,0x0,lpCandList,dwSize);
-			}
-			else
-			{
-				memset(lpCandList, 0, sizeof(CANDIDATELIST));
-			}
-
-			InvalidateRect(hWndCandList,NULL,TRUE);
-			UpdateWindow(hWndCandList);
-
-
-			ImmReleaseContext(hWnd,hIMC);
-		}
-		else
-		{
-			return (DefWindowProc(hWnd, message, wParam, lParam));
 		}
 		break;
 
 	case IMN_CLOSECANDIDATE:
-		if (fShowCand && (lParam == 0x01))
 		{
-			if (!lpCandList)
+			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("IMN_CLOSECANDIDATE[%08X][%08X]"), wParam, lParam);
+			if (fShowCand && (lParam == 0x01))
 			{
-				lpCandList = (LPCANDIDATELIST)GlobalAlloc(GPTR,sizeof(CANDIDATELIST));
+				if (!lpCandList)
+				{
+					lpCandList = (LPCANDIDATELIST)GlobalAlloc(GPTR,sizeof(CANDIDATELIST));
+				}
+
+				memset(lpCandList, 0, sizeof(CANDIDATELIST));
+				InvalidateRect(hWndCandList,NULL,TRUE);
+				UpdateWindow(hWndCandList);
 			}
-
-			memset(lpCandList, 0, sizeof(CANDIDATELIST));
-			InvalidateRect(hWndCandList,NULL,TRUE);
-			UpdateWindow(hWndCandList);
-		}
-		else
-		{
-			return (DefWindowProc(hWnd, message, wParam, lParam));
-		}
+			else
+			{
+				return (DefWindowProc(hWnd, message, wParam, lParam));
+			}
+		}		
 		break;
-
 	case IMN_GUIDELINE:
 		{
+			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("IMN_GUIDELINE[%08X][%08X]"), wParam, lParam);
 			DWORD dwLevel = ImmGetGuideLine(hIMC, GGL_LEVEL, NULL, 0);
 			INPUTCONTEXT* pInput = NULL;
 			pInput = (INPUTCONTEXT*)ImmLockIMC(hIMC);
@@ -528,10 +688,40 @@ LRESULT HandleNotify(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				GUIDELINE* pGuidLine = (GUIDELINE*)ImmLockIMCC(pInput->hGuideLine);
 				if (pGuidLine)
 				{
-					StringCchPrintf(szGuideLine, _countof(szGuideLine), L"%08X-%08X-%08X-%08X-%08X-%08X-%08X\n", pGuidLine->dwSize, pGuidLine->dwLevel, pGuidLine->dwIndex, pGuidLine->dwStrLen, pGuidLine->dwStrOffset, pGuidLine->dwPrivateSize, pGuidLine->dwPrivateOffset);					
+					StringCchPrintf(szGuideLine, _countof(szGuideLine), _T("%08X-%08X-%08X-%08X-%08X-%08X-%08X\n"), pGuidLine->dwSize, pGuidLine->dwLevel, pGuidLine->dwIndex, pGuidLine->dwStrLen, pGuidLine->dwStrOffset, pGuidLine->dwPrivateSize, pGuidLine->dwPrivateOffset);					
 				}
 			}
 			return (DefWindowProc(hWnd, message, wParam, lParam));
+		}
+		break;
+	case NI_CHANGECANDIDATELIST:
+		{
+			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("NI_CHANGECANDIDATELIST[%08X][%08X]"), wParam, lParam);
+		}
+		break;
+	case NI_SELECTCANDIDATESTR:
+		{
+			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("NI_SELECTCANDIDATESTR[%08X][%08X]"), wParam, lParam);
+		}
+		break;	
+	case NI_FINALIZECONVERSIONRESULT:
+		{
+			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("NI_FINALIZECONVERSIONRESULT[%08X][%08X]"), wParam, lParam);
+		}
+		break;  
+	case NI_SETCANDIDATE_PAGESTART:
+		{
+			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("NI_SETCANDIDATE_PAGESTART[%08X][%08X]"), wParam, lParam);
+		}
+		break; 
+	case NI_SETCANDIDATE_PAGESIZE:
+		{
+			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("NI_SETCANDIDATE_PAGESIZE[%08X][%08X]"), wParam, lParam);
+		}
+		break;
+	case NI_IMEMENUSELECTED:
+		{
+			DEBUGMSG(MSG_LEVEL_DEBUG, TEXT("NI_IMEMENUSELECTED[%08X][%08X]"), wParam, lParam);
 		}
 		break;
 	default:

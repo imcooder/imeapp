@@ -8,6 +8,7 @@
 
 #include "wapi.h"
 #include <string>
+#include "tsfread.h"
 #define ORG_X                     10
 #define ORG_Y                     10
 
@@ -30,7 +31,7 @@ extern HWND hWndToolBar;
 extern HWND hWndStatus;
 extern HWND hWndCompStr;
 extern HWND hWndCandList;
-
+extern CTSFRead g_tsfReader;
 extern LOGFONT lf;
 extern HFONT hFont;
 
@@ -72,6 +73,7 @@ extern DWORD dwSentenceMode;
 /* imeapps.c */
 BOOL InitApplication(HINSTANCE);
 BOOL InitInstance(HINSTANCE, int);
+BOOL OnExitInstance(HINSTANCE);
 LRESULT CALLBACK MainWndProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK CompStrWndProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK CandListWndProc(HWND, UINT, WPARAM, LPARAM);
@@ -80,6 +82,7 @@ LRESULT HandleStartComposition(HWND,WPARAM,LPARAM);
 LRESULT HandleEndComposition(HWND,WPARAM,LPARAM);
 LRESULT HandleComposition(HWND,WPARAM,LPARAM);
 LRESULT HandleChar(HWND,WPARAM,LPARAM);
+LRESULT HandleIMEChar(HWND,WPARAM,LPARAM);
 LRESULT HandleNotify(HWND,UINT,WPARAM,LPARAM);
 LRESULT HandlePaint(HWND, WPARAM, LPARAM);
 LRESULT HandleCandPaint(HWND, WPARAM, LPARAM);
@@ -114,4 +117,4 @@ void InitMenuItemIDTable();
 DWORD FindItemData(UINT wID);
 HMENU CreateImeMenu(HWND hWnd, HIMC hIMC, LPIMEMENUITEMINFO lpImeParentMenu, BOOL fRight);
 
-VOID ParseProperty(ULONG_PTR, std::wstring&);
+VOID ParseProperty(ULONG_PTR, tstring&);
