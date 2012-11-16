@@ -75,7 +75,7 @@ LRESULT HandlePaint(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	const TCHAR  szResult[] = TEXT("Result String");
 	const TCHAR  szComp[] = TEXT("Composition String");
 	RECT rc = {0};
-	WCHAR szBuf[64] = {0};
+	TCHAR szBuf[64] = {0};
 	GetClientRect(hWnd,&rc);
 
 	hDC = BeginPaint(hWnd, &ps);
@@ -214,14 +214,12 @@ LRESULT HandlePaint(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		SelectObject(hDC,hFont);
 		SetTextColor(hDC, RGB(0, 0, 0));
 		SetBkMode(hDC,TRANSPARENT);
-		StringCchPrintf(szBuf, _countof(szBuf), L"CompReadStr:%04d", dwCompReadStrLen);	
+		StringCchPrintf(szBuf, _countof(szBuf), _T("CompReadStr:%04d"), dwCompReadStrLen);	
 		TextOut(hDC, x, y, szBuf, _tcslen(szBuf));
 		if (dwCompReadStrLen)
-		{
-			std::wstring strText;
-			DWORD dwPos = 0;
-			strText.assign(szCompReadStr);			
-			TextOut(hDC, x + nOffsetX, y, strText.c_str(),strText.length());
+		{			
+			DWORD dwPos = 0;					
+			TextOut(hDC, x + nOffsetX, y, szCompReadStr,_tcslen(szCompReadStr));
 		}
 		y += height;
 	}
@@ -232,11 +230,11 @@ LRESULT HandlePaint(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		SelectObject(hDC,hFont);
 		SetTextColor(hDC, RGB(0, 0, 0));
 		SetBkMode(hDC,TRANSPARENT);
-		StringCchPrintf(szBuf, _countof(szBuf), L"CompReadAttr:%04d", dwCompReadAttrLen);	
+		StringCchPrintf(szBuf, _countof(szBuf), _T("CompReadAttr:%04d"), dwCompReadAttrLen);	
 		TextOut(hDC, x, y, szBuf, _tcslen(szBuf));
 		if (dwCompReadAttrLen)
 		{
-			std::wstring strText;
+			tstring strText;
 			DWORD dwPos = 0;
 			while (dwPos < dwCompReadAttrLen && dwPos < _countof(bCompReadAttr))
 			{
@@ -256,11 +254,11 @@ LRESULT HandlePaint(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		SelectObject(hDC,hFont);
 		SetTextColor(hDC, RGB(0, 0, 0));
 		SetBkMode(hDC,TRANSPARENT);
-		StringCchPrintf(szBuf, _countof(szBuf), L"CompReadCls:%04d", dwCompReadClsLen);	
+		StringCchPrintf(szBuf, _countof(szBuf), _T("CompReadCls:%04d"), dwCompReadClsLen);	
 		TextOut(hDC, x, y, szBuf, _tcslen(szBuf));
 		if (dwCompReadClsLen)
 		{
-			std::wstring strText;
+			tstring strText;
 			DWORD dwPos = 0;
 			while (dwPos < dwCompReadClsLen && dwPos < _countof(dwCompReadCls))
 			{
@@ -280,15 +278,15 @@ LRESULT HandlePaint(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		SelectObject(hDC,hFont);
 		SetTextColor(hDC, RGB(0, 0, 0));
 		SetBkMode(hDC,TRANSPARENT);
-		StringCchPrintf(szBuf, _countof(szBuf), L"CompAttr:%04d", dwCompAttrLen);	
+		StringCchPrintf(szBuf, _countof(szBuf), _T("CompAttr:%04d"), dwCompAttrLen);	
 		TextOut(hDC, x, y, szBuf, _tcslen(szBuf));
 		if (dwCompAttrLen)
 		{
-			std::wstring strText;
+			tstring strText;
 			DWORD dwPos = 0;
 			while (dwPos < dwCompAttrLen && dwPos < _countof(bCompAttr))
 			{
-				StringCchPrintf(szBuf, _countof(szBuf), TEXT("%08X-"), bCompAttr[dwPos]);
+				StringCchPrintf(szBuf, _countof(szBuf), TEXT("%02X-"), bCompAttr[dwPos]);
 				strText += szBuf;	
 
 				dwPos ++;		
@@ -304,11 +302,11 @@ LRESULT HandlePaint(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		SelectObject(hDC,hFont);
 		SetTextColor(hDC, RGB(0, 0, 0));
 		SetBkMode(hDC,TRANSPARENT);
-		StringCchPrintf(szBuf, _countof(szBuf), L"CompCls:%04d", dwCompClsLen);	
+		StringCchPrintf(szBuf, _countof(szBuf), _T("CompCls:%04d"), dwCompClsLen);	
 		TextOut(hDC, x, y, szBuf, _tcslen(szBuf));
 		if (dwCompClsLen)
 		{
-			std::wstring strText;
+			tstring strText;
 			DWORD dwPos = 0;
 			while (dwPos < dwCompClsLen && dwPos < _countof(dwCompCls))
 			{
@@ -328,7 +326,7 @@ LRESULT HandlePaint(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		SelectObject(hDC,hFont);
 		SetTextColor(hDC, RGB(0, 0, 0));
 		SetBkMode(hDC,TRANSPARENT);
-		StringCchPrintf(szBuf, _countof(szBuf), L"CompAttr Format:%04d", dwCompAttrLen);	
+		StringCchPrintf(szBuf, _countof(szBuf), _T("CompAttr Format:%04d"), dwCompAttrLen);	
 		TextOut(hDC, x, y, szBuf, _tcslen(szBuf));	
 		x += nOffsetX;
 		if (dwCompAttrLen)
@@ -364,7 +362,7 @@ LRESULT HandlePaint(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		SelectObject(hDC,hFont);
 		SetTextColor(hDC,RGB(0,0,0));
 		SetBkMode(hDC,TRANSPARENT);
-		StringCchPrintf(szBuf, _countof(szBuf), L"CompReadAttr Format:%04d", dwCompReadStrLen);	
+		StringCchPrintf(szBuf, _countof(szBuf), _T("CompReadAttr Format:%04d"), dwCompReadStrLen);	
 		TextOut(hDC, x, y, szBuf, _tcslen(szBuf));
 		x += nOffsetX;
 		if (dwCompReadStrLen)
@@ -406,12 +404,12 @@ LRESULT HandlePaint(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		SelectObject(hDC,hFont);
 		SetTextColor(hDC,RGB(0,0,0));
 		SetBkMode(hDC,TRANSPARENT);
-		StringCchPrintf(szBuf, _countof(szBuf), L"CompStr:%04d", dwCompStrLen);	
+		StringCchPrintf(szBuf, _countof(szBuf), _T("CompStr:%04d"), dwCompStrLen);	
 		TextOut(hDC, x, y, szBuf, _tcslen(szBuf));
 		x += nOffsetX;
 		if (dwCompStrLen)
 		{
-			std::wstring strText;
+			tstring strText;
 			strText.assign(szCompStr);		
 			TextOut(hDC, x, y, strText.c_str(),strText.length());
 		}
@@ -424,12 +422,12 @@ LRESULT HandlePaint(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		SelectObject(hDC,hFont);
 		SetTextColor(hDC,RGB(0,0,0));
 		SetBkMode(hDC,TRANSPARENT);
-		StringCchPrintf(szBuf, _countof(szBuf), L"ResultReadCls:%04d", dwResultReadClsLen);	
+		StringCchPrintf(szBuf, _countof(szBuf), _T("ResultReadCls:%04d"), dwResultReadClsLen);	
 		TextOut(hDC, x, y, szBuf, _tcslen(szBuf));
 		x += nOffsetX;
 		if (dwResultReadClsLen)
 		{
-			std::wstring strText;
+			tstring strText;
 			DWORD dwPos = 0;
 			while (dwPos < dwResultReadClsLen && dwPos < _countof(dwResultReadCls))
 			{
@@ -449,12 +447,12 @@ LRESULT HandlePaint(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		SelectObject(hDC,hFont);
 		SetTextColor(hDC,RGB(0,0,0));
 		SetBkMode(hDC,TRANSPARENT);
-		StringCchPrintf(szBuf, _countof(szBuf), L"ResultReadStr:%04d", dwResultReadStrLen);	
+		StringCchPrintf(szBuf, _countof(szBuf), _T("ResultReadStr:%04d"), dwResultReadStrLen);	
 		TextOut(hDC, x, y, szBuf, _tcslen(szBuf));
 		x += nOffsetX;
 		if (dwResultReadStrLen)
 		{
-			std::wstring strText;
+			tstring strText;
 			strText.assign(szResultStr);		
 			TextOut(hDC, x, y, strText.c_str(),strText.length());
 		}
@@ -467,12 +465,12 @@ LRESULT HandlePaint(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		SelectObject(hDC,hFont);
 		SetTextColor(hDC,RGB(0,0,0));
 		SetBkMode(hDC,TRANSPARENT);
-		StringCchPrintf(szBuf, _countof(szBuf), L"ResultCls:%04d", dwResultClsLen);	
+		StringCchPrintf(szBuf, _countof(szBuf), _T("ResultCls:%04d"), dwResultClsLen);	
 		TextOut(hDC, x, y, szBuf, _tcslen(szBuf));
 		x += nOffsetX;
 		if (dwResultClsLen)
 		{
-			std::wstring strText;
+			tstring strText;
 			DWORD dwPos = 0;
 			while (dwPos < dwResultClsLen && dwPos < _countof(dwResultCls))
 			{
@@ -492,12 +490,12 @@ LRESULT HandlePaint(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		SelectObject(hDC,hFont);
 		SetTextColor(hDC,RGB(0,0,0));
 		SetBkMode(hDC,TRANSPARENT);
-		StringCchPrintf(szBuf, _countof(szBuf), L"ResultStr:%04d", dwResultStrLen);	
+		StringCchPrintf(szBuf, _countof(szBuf), _T("ResultStr:%04d"), dwResultStrLen);	
 		TextOut(hDC, x, y, szBuf, _tcslen(szBuf));
 		x += nOffsetX;
 		if (dwResultStrLen)
 		{
-			std::wstring strText;
+			tstring strText;
 			strText.assign(szResultStr);		
 			TextOut(hDC, x, y, strText.c_str(),strText.length());
 		}
@@ -510,12 +508,12 @@ LRESULT HandlePaint(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		SelectObject(hDC,hFont);
 		SetTextColor(hDC,RGB(0,0,0));
 		SetBkMode(hDC,TRANSPARENT);
-		StringCchPrintf(szBuf, _countof(szBuf), L"Cursor:");	
+		StringCchPrintf(szBuf, _countof(szBuf), _T("Cursor:"));	
 		TextOut(hDC, x, y, szBuf, _tcslen(szBuf));
 		x += nOffsetX;
 		if (szCursor[0])
 		{
-			std::wstring strText;
+			tstring strText;
 			strText.assign(szCursor);		
 			TextOut(hDC, x, y, strText.c_str(),strText.length());
 		}
@@ -528,12 +526,12 @@ LRESULT HandlePaint(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		SelectObject(hDC,hFont);
 		SetTextColor(hDC,RGB(0,0,0));
 		SetBkMode(hDC,TRANSPARENT);
-		StringCchPrintf(szBuf, _countof(szBuf), L"Delta:");	
+		StringCchPrintf(szBuf, _countof(szBuf), _T("Delta:"));	
 		TextOut(hDC, x, y, szBuf, _tcslen(szBuf));
 		x += nOffsetX;
 		if (szCursor[0])
 		{
-			std::wstring strText;
+			tstring strText;
 			strText.assign(szDelta);		
 			TextOut(hDC, x, y, strText.c_str(),strText.length());
 		}
@@ -546,12 +544,12 @@ LRESULT HandlePaint(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		SelectObject(hDC,hFont);
 		SetTextColor(hDC,RGB(0,0,0));
 		SetBkMode(hDC,TRANSPARENT);
-		StringCchPrintf(szBuf, _countof(szBuf), L"GuideLine:");	
+		StringCchPrintf(szBuf, _countof(szBuf), _T("GuideLine:"));	
 		TextOut(hDC, x, y, szBuf, _tcslen(szBuf));
 		x += nOffsetX;
 		if (szGuideLine[0])
 		{
-			std::wstring strText;
+			tstring strText;
 			strText.assign(szGuideLine);		
 			TextOut(hDC, x, y, strText.c_str(),strText.length());
 		}
@@ -564,10 +562,10 @@ LRESULT HandlePaint(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		SelectObject(hDC,hFont);
 		SetTextColor(hDC,RGB(0,0,0));
 		SetBkMode(hDC,TRANSPARENT);
-		StringCchPrintf(szBuf, _countof(szBuf), L"Property:%08X", fdwProperty);	
+		StringCchPrintf(szBuf, _countof(szBuf), _T("Property:%08X"), fdwProperty);	
 		TextOut(hDC, x, y, szBuf, _tcslen(szBuf));
 		x += nOffsetX;
-		std::wstring strText;
+		tstring strText;
 		ParseProperty(fdwProperty, strText);
 		TextOut(hDC, x, y, strText.c_str(), strText.length());	
 
@@ -695,7 +693,7 @@ LRESULT HandleCandPaint(HWND hWnd,WPARAM wParam, LPARAM lParam)
 		y += height;
 	}
 
-	
+
 	SelectObject(hDC,hOldFont);
 
 pt_cand_10:

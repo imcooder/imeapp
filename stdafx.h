@@ -13,4 +13,20 @@
 #include <windows.h>
 #include <strsafe.h>
 #include "bddebug.h"
+#include <string>
 // TODO: reference additional headers your program requires here
+#include <strsafe.h>
+#include <atlbase.h>
+#include <atlwin.h>
+#include <atlstr.h>
+#include <atltypes.h>
+#include <atlsync.h>
+
+#ifdef UNICODE
+typedef std::wstring tstring;
+#else
+typedef std::string tstring;
+#endif
+
+
+#include "bddebug.h"

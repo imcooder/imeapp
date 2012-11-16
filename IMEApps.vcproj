@@ -422,6 +422,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\tsfread.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Wsubs.c"
 				>
 				<FileConfiguration
@@ -471,6 +475,10 @@
 			</File>
 			<File
 				RelativePath=".\ToolBar.h"
+				>
+			</File>
+			<File
+				RelativePath=".\tsfread.h"
 				>
 			</File>
 			<File

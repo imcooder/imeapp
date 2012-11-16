@@ -9,6 +9,7 @@
 #include <windows.h>
 #include <imm.h>
 #include "wapi.h"
+#include "tsfread.h"
 
 HINSTANCE hInst      = NULL;
 HWND hWndMain     = NULL;
@@ -55,4 +56,6 @@ LPCANDIDATELIST lpCandList = NULL;
 DWORD dwConversionMode;
 DWORD dwSentenceMode;
 POINT ptImeUIPos = {0};
+
+CTSFRead g_tsfReader;
 
