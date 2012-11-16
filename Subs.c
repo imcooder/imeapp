@@ -28,7 +28,7 @@ void MoveCompCandWindow(HWND hWnd)
 	ScreenToClient(hWnd,(LPPOINT)&rc.left);
 	rcClient.bottom = rc.top;
 
-	if (fShowCand)
+	if (CGlobalData::GetInstance().m_isShowCand)
 	{
 		if (rcClient.right >= CAND_CX * 3)
 		{
@@ -38,28 +38,12 @@ void MoveCompCandWindow(HWND hWnd)
 		{
 			cx = (rcClient.right-rcClient.left) * 2 / 3;
 		}
-
-		MoveWindow(hWndCompStr,
-			rcClient.left,
-			rcClient.top,
-			cx,
-			rcClient.bottom-rcClient.top,
-			TRUE);
-		MoveWindow(hWndCandList,
-			cx,
-			rcClient.top,
-			rcClient.right-rcClient.left - cx,
-			rcClient.bottom-rcClient.top,
-			TRUE);
+		MoveWindow(hWndCompStr,	rcClient.left,	rcClient.top,	cx,	rcClient.bottom-rcClient.top,	TRUE);
+		MoveWindow(hWndCandList,	cx,	rcClient.top,	rcClient.right-rcClient.left - cx,	rcClient.bottom-rcClient.top,	TRUE);
 	}
 	else
 	{
-		MoveWindow(hWndCompStr,
-			rcClient.left,
-			rcClient.top,
-			rcClient.right-rcClient.left,
-			rcClient.bottom-rcClient.top,
-			TRUE);
+		MoveWindow(hWndCompStr,	rcClient.left, rcClient.top,	rcClient.right-rcClient.left,	rcClient.bottom-rcClient.top,	TRUE);
 		MoveWindow(hWndCandList, 0, 0, 0, 0, TRUE);
 	}
 

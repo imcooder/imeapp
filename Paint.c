@@ -12,7 +12,6 @@
 #include "imeapps.h"
 #include <strsafe.h>
 #include <string>
-#define DEBUG 1
 
 
 
@@ -571,6 +570,25 @@ LRESULT HandlePaint(HWND hWnd, WPARAM wParam, LPARAM lParam)
 
 		y += height;
 	}	
+
+
+	//////////////////////////////////////////////////////////////
+	///////		TSF																////////////////// 
+	////////////////////////////////////////////////////////////// 
+	y += 10;
+	const TCHAR szTSFInfo[] = _T("------------------TSF--------------");
+	TextOut(hDC, ORG_X, y, szTSFInfo, _tcslen(szTSFInfo));
+	y += height;
+	/// TSF CompostionText
+	{
+		x = ORG_X;
+		SelectObject(hDC, hFont);
+		SetTextColor(hDC, RGB(0, 0, 0));
+		SetBkMode(hDC, TRANSPARENT);
+		StringCchPrintf(szBuf, _countof(szBuf), _T("TSF CompStr[%X]:[%s]"), CGlobalData::GetInstance().m_strCompositionText.length(), CGlobalData::GetInstance().m_strCompositionText.c_str());	
+		TextOut(hDC, x, y, szBuf, _tcslen(szBuf));
+		y += height;
+	}
 	ptImeUIPos.y = y;
 
 	SelectObject(hDC,hOldFont);

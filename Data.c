@@ -23,7 +23,6 @@ HFONT hFont = NULL;
 
 int nStatusHeight = 0;
 int nToolBarHeight = 0;
-BOOL fShowCand = FALSE;
 DWORD fdwProperty = 0;
 
 DWORD  dwCompStrLen      = 0;

@@ -29,12 +29,13 @@ public:
 	BOOL InitThreadMgrSink();
 	void UninitThreadMgrSink();
 	BOOL InitTextEditSink(ITfDocumentMgr *pDocMgr);
-
-	void AppendCompositionText(ITfRange *pRange, TfEditCookie ecReadOnly);
+	
 	void ClearCompositionText();
 	BOOL CheckComposition(ITfContext *pContext, TfEditCookie ecReadOnly);
 	HRESULT Initialize();
 	HRESULT Uninitialize();
+protected:
+	static HRESULT GetDispAttrFromRange(ITfContext *pContext, ITfRange *pRange, TfEditCookie ec, TF_DISPLAYATTRIBUTE *pDispAttr);
 private:
 	DWORD m_dwThreadMgrEventSinkCookie;
 	DWORD m_dwTextEditSinkCookie;

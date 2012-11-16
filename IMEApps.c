@@ -157,7 +157,7 @@ BOOL InitInstance(HINSTANCE hInstance, INT nCmdShow)
 	/* display each windows */
 	ShowWindow (hWndMain, nCmdShow);
 	UpdateWindow (hWndMain);
-	
+
 	g_tsfReader.Initialize();
 	return TRUE;
 }
@@ -240,43 +240,42 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 	switch (message) 
 	{
 	case WM_CREATE:
+		{
+			// Create Status Window
+			CreateTBar(hWnd);
+			CreateStatus(hWnd);
 
-		// Create Status Window
-		CreateTBar(hWnd);
-		CreateStatus(hWnd);
-
-		// Create Child Window
-		GetClientRect(hWnd, &rect);
-		if (!(hWndCompStr = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("CompStrWndClass"), NULL,	WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, hWnd, NULL, hInst, NULL)))
-			return FALSE;
-
-
-		InitIMEUIPosition(hWndCompStr);
+			// Create Child Window
+			GetClientRect(hWnd, &rect);
+			if (!(hWndCompStr = CreateWindowEx(WS_EX_CLIENTEDGE, TEXT("CompStrWndClass"), NULL,	WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, hWnd, NULL, hInst, NULL)))
+				return FALSE;
 
 
-		if (!(hWndCandList = CreateWindowEx(WS_EX_CLIENTEDGE,	TEXT("CandListWndClass"), NULL,	WS_CHILD | WS_VISIBLE, 	0, 0, 0, 0,	hWnd, NULL, hInst, NULL)))
-			return FALSE;
+			InitIMEUIPosition(hWndCompStr);
 
-		ShowWindow(hWndCompStr, SW_SHOW);
-		ShowWindow(hWndCandList, SW_SHOWNA);
 
-		SetStatusItems(hWnd);
+			if (!(hWndCandList = CreateWindowEx(WS_EX_CLIENTEDGE,	TEXT("CandListWndClass"), NULL,	WS_CHILD | WS_VISIBLE, 	0, 0, 0, 0,	hWnd, NULL, hInst, NULL)))
+				return FALSE;
 
-		hMenu = GetMenu(hWnd);
-		CheckMenuItem(hMenu,IDM_SHOWCAND,
-			(fShowCand ? MF_CHECKED : MF_UNCHECKED));
+			ShowWindow(hWndCompStr, SW_SHOW);
+			ShowWindow(hWndCandList, SW_SHOWNA);
 
+			SetStatusItems(hWnd);
+			hMenu = GetMenu(hWnd);
+			CheckMenuItem(hMenu,IDM_SHOWCAND,	(CGlobalData::GetInstance().m_isShowCand ? MF_CHECKED : MF_UNCHECKED));	
+			CGlobalData::GetInstance().m_hHost = hWnd;
+		}
 		break;
-
 	case WM_COMMAND:
 		switch(LOWORD(wParam))
 		{
 		case IDM_ABOUT:
-			lpProc = (FARPROC)MakeProcInstance(AboutDlg, hInst);
-			DialogBox(hInst, TEXT("ABOUTBOX"), hWnd, (DLGPROC)lpProc);
-			FreeProcInstance(lpProc);
+			{
+				lpProc = (FARPROC)MakeProcInstance(AboutDlg, hInst);
+				DialogBox(hInst, TEXT("ABOUTBOX"), hWnd, (DLGPROC)lpProc);
+				FreeProcInstance(lpProc);
+			}
 			break;
-
 		case IDM_FONT:
 			{
 				CHOOSEFONT cf = {0};
@@ -302,32 +301,31 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 
 					memcpy(&lf, &lfT, sizeof(LOGFONT));
 					hFont = CreateFontIndirect(&lf);
-					InvalidateRect(hWndCompStr,NULL,TRUE);
-					UpdateWindow(hWndCompStr);
+					CGlobalData::GetInstance().NotifyUpdateUI();
 				}
 			}
 			break;
-
-
 		case IDM_SHOWCAND:
-			hMenu = GetMenu(hWnd);
-			fShowCand = !fShowCand;
-			CheckMenuItem(hMenu,IDM_SHOWCAND,
-				(fShowCand ? MF_CHECKED : MF_UNCHECKED));
-			MoveCompCandWindow(hWnd);
-			UpdateShowCandButton();
+			{
+				hMenu = GetMenu(hWnd);
+				CGlobalData::GetInstance().m_isShowCand = !CGlobalData::GetInstance().m_isShowCand;
+				CheckMenuItem(hMenu,IDM_SHOWCAND,	(CGlobalData::GetInstance().m_isShowCand ? MF_CHECKED : MF_UNCHECKED));
+				MoveCompCandWindow(hWnd);
+				UpdateShowCandButton();
+			}
 			break;
 
 		case IDM_OPENSTATUS:
-			hIMC = ImmGetContext(hWndCompStr);
-			fOpen = ImmGetOpenStatus(hIMC);
-			ImmSetOpenStatus(hIMC,!fOpen);
-			UpdateShowOpenStatusButton(!fOpen);
-			ImmReleaseContext(hWndCompStr,hIMC);
+			{
+				hIMC = ImmGetContext(hWndCompStr);
+				fOpen = ImmGetOpenStatus(hIMC);
+				ImmSetOpenStatus(hIMC,!fOpen);
+				UpdateShowOpenStatusButton(!fOpen);
+				ImmReleaseContext(hWndCompStr,hIMC);
 
-			hMenu = GetMenu(hWnd);
-			CheckMenuItem(hMenu,IDM_OPENSTATUS,
-				(fOpen ? MF_UNCHECKED : MF_CHECKED));
+				hMenu = GetMenu(hWnd);
+				CheckMenuItem(hMenu,IDM_OPENSTATUS,	(fOpen ? MF_UNCHECKED : MF_CHECKED));
+			}
 			break;
 
 		case IDM_NATIVEMODE: /* fall-through */
@@ -338,7 +336,9 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 		case IDM_SOFTKBD:    /* fall-through */
 		case IDM_EUDC:       /* fall-through */
 		case IDM_SYMBOL:     
-			HandleModeCommand(hWnd,wParam,lParam);
+			{
+				HandleModeCommand(hWnd,wParam,lParam);
+			}
 			break;
 
 		case IDM_CONVERT:    /* fall-through */
@@ -349,12 +349,16 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 		case IDM_CLOSECAND:  /* fall-through */
 		case IDM_NEXTCAND:   /* fall-through */
 		case IDM_PREVCAND:
-			HandleConvertCommand(hWnd,wParam,lParam);
+			{
+				HandleConvertCommand(hWnd,wParam,lParam);
+			}
 			break;
 
 		case IDM_NEXTCLAUSE: /* fall-through */
 		case IDM_PREVCLAUSE:
-			HandleChangeAttr(hWnd,(LOWORD(wParam) == IDM_NEXTCLAUSE));
+			{
+				HandleChangeAttr(hWnd,(LOWORD(wParam) == IDM_NEXTCLAUSE));
+			}
 			break;
 
 		default:
@@ -363,44 +367,73 @@ LRESULT CALLBACK MainWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPar
 		break;
 
 	case WM_SETFOCUS:
-		SetFocus(hWndCompStr);
-		break;
-
-	case WM_NOTIFY:
-		SetTooltipText(hWnd, lParam);
-		break;
-
-	case WM_SIZE:
-		SendMessage(hWndStatus,message,wParam,lParam);
-		SendMessage(hWndToolBar,message,wParam,lParam);
-
-		if (wParam != SIZE_MINIMIZED)
 		{
-			MoveCompCandWindow(hWnd);
+			SetFocus(hWndCompStr);
+		}
+		break;
+	case WM_NOTIFY:
+		{
+			SetTooltipText(hWnd, lParam);
+		}
+		break;
+	case MSG_NOTIFY_UPDATEUI:
+		{
+			SetTimer(hWnd, 0x100, 100, NULL);
+		}
+		break;
+	case WM_TIMER:
+		{
+			if (wParam == 0x100)
+			{
+				KillTimer(hWnd, 0x100);
+				if (IsWindow(hWndCompStr))
+				{
+					InvalidateRect(hWndCompStr, NULL, TRUE);
+					UpdateWindow(hWndCompStr);
+				}
+				if (IsWindow(hWndCandList))
+				{
+					InvalidateRect(hWndCandList, NULL, TRUE);
+					UpdateWindow(hWndCandList);
+				}				
+			}
+		}
+		break;
+	case WM_SIZE:
+		{
+			SendMessage(hWndStatus,message,wParam,lParam);
+			SendMessage(hWndToolBar,message,wParam,lParam);
+
+			if (wParam != SIZE_MINIMIZED)
+			{
+				MoveCompCandWindow(hWnd);
+			}
 		}
 		break;
 
 	case WM_IME_NOTIFY:
-		switch (wParam)
 		{
-		case IMN_OPENSTATUSWINDOW:  /* fall-through */
-		case IMN_CLOSESTATUSWINDOW:
-			break;
+			switch (wParam)
+			{
+			case IMN_OPENSTATUSWINDOW:  /* fall-through */
+			case IMN_CLOSESTATUSWINDOW:
+				break;
 
-		case IMN_SETCONVERSIONMODE:
-			return (DefWindowProc(hWnd, message, wParam, lParam));
+			case IMN_SETCONVERSIONMODE:
+				return (DefWindowProc(hWnd, message, wParam, lParam));
+			}
 		}
 		break;
-
-
 	case WM_DESTROY:
-		if (hFont)
 		{
-			DeleteObject(hFont);
-		}
-		PostQuitMessage(0);
+			if (hFont)
+			{
+				DeleteObject(hFont);
+			}
+			CGlobalData::GetInstance().m_hHost = NULL;
+			PostQuitMessage(0);
+		}		
 		break;
-
 	default:
 		return (DefWindowProc(hWnd, message, wParam, lParam));
 	}
@@ -421,9 +454,9 @@ LRESULT CALLBACK CompStrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 	case WM_CREATE:
 		{
 			hIMC = ImmCreateContext();
-		hOldIMC = ImmAssociateContext(hWnd,hIMC);
-		SetWindowLongPtr(hWnd, 0, (LONG_PTR)hOldIMC);
-		fdwProperty = ImmGetProperty(GetKeyboardLayout(0), IGP_PROPERTY);
+			hOldIMC = ImmAssociateContext(hWnd,hIMC);
+			SetWindowLongPtr(hWnd, 0, (LONG_PTR)hOldIMC);
+			fdwProperty = ImmGetProperty(GetKeyboardLayout(0), IGP_PROPERTY);
 		}
 		break;
 
@@ -467,16 +500,15 @@ LRESULT CALLBACK CompStrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 	case WM_IME_SELECT:
 		{
-			DEBUGMSG(1, _T("WM_IME_SELECT: %d-%08X\n"), wParam, lParam);
+			RETAILMSG(MSG_LEVEL_DEBUG, _T("WM_IME_SELECT: %d-%08X\n"), wParam, lParam);
 			return 0;
 		}
 		break;
 	case WM_IME_SETCONTEXT:
-		if (fShowCand)
+		if (CGlobalData::GetInstance().m_isShowCand)
 		{
 			lParam &= ~ISC_SHOWUICANDIDATEWINDOW;
 		}
-
 		if (fdwProperty & IME_PROP_SPECIAL_UI)
 		{
 			// EMPTY
@@ -494,7 +526,7 @@ LRESULT CALLBACK CompStrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 	case WM_IME_STARTCOMPOSITION:
 		{
-			DEBUGMSG(MSG_LEVEL_DEBUG, _T("WM_IME_STARTCOMPOSITION: [%08X][%08X]"), wParam, lParam);
+			RETAILMSG(MSG_LEVEL_DEBUG, _T("WM_IME_STARTCOMPOSITION: [%08X][%08X]"), wParam, lParam);
 			HandleStartComposition(hWnd,wParam,lParam);
 			// pass this message to DefWindowProc for IME_PROP_SPECIAL_UI
 			// and not IME_PROP_AT_CARET IMEs
@@ -516,7 +548,7 @@ LRESULT CALLBACK CompStrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 	case WM_IME_ENDCOMPOSITION:
 		{
-			DEBUGMSG(1, _T("WM_IME_ENDCOMPOSITION: %08X-%08X\n"), wParam, lParam);
+			RETAILMSG(MSG_LEVEL_DEBUG, _T("WM_IME_ENDCOMPOSITION: %08X-%08X\n"), wParam, lParam);
 			HandleEndComposition(hWnd,wParam,lParam);
 
 			// pass this message to DefWindowProc for IME_PROP_SPECIAL_UI
@@ -539,7 +571,7 @@ LRESULT CALLBACK CompStrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 
 	case WM_IME_COMPOSITION:
 		{
-			DEBUGMSG(1, _T("WM_IME_COMPOSITION: %08X-%08X\n"), wParam, lParam);
+			RETAILMSG(MSG_LEVEL_DEBUG, _T("WM_IME_COMPOSITION: %08X-%08X\n"), wParam, lParam);
 			HandleComposition(hWnd, wParam, lParam);
 			if (fdwProperty & IME_PROP_SPECIAL_UI)
 			{
@@ -557,17 +589,17 @@ LRESULT CALLBACK CompStrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 		break;
 	case WM_IME_COMPOSITIONFULL:
 		{
-			DEBUGMSG(1, _T("WM_IME_COMPOSITIONFULL: %08X-%08X\n"), wParam, lParam);
+			RETAILMSG(MSG_LEVEL_DEBUG, _T("WM_IME_COMPOSITIONFULL: %08X-%08X\n"), wParam, lParam);
 		}
 		break;
 	case WM_PAINT:
 		{
-			HandlePaint(hWnd,wParam,lParam);
+			HandlePaint(hWnd, wParam, lParam);
 		}
 		break;
 	case WM_IME_NOTIFY:
 		{
-			DEBUGMSG(1, _T("WM_IME_NOTIFY: %08X-%08X\n"), wParam, lParam);
+			RETAILMSG(MSG_LEVEL_DEBUG, _T("WM_IME_NOTIFY: %08X-%08X\n"), wParam, lParam);
 			LRESULT lRet;
 			lRet = HandleNotify(hWnd, message, wParam, lParam);
 			// pass this message to DefWindowProc for IME_PROP_SPECIAL_UI
@@ -599,7 +631,7 @@ LRESULT CALLBACK CompStrWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM l
 	case WM_INPUTLANGCHANGE:
 		{
 			fdwProperty = ImmGetProperty(GetKeyboardLayout(0), IGP_PROPERTY);
-			DEBUGMSG(1, _T("%08X\n"), fdwProperty);
+			RETAILMSG(MSG_LEVEL_DEBUG, _T("%08X\n"), fdwProperty);
 
 			if (hIMC = ImmGetContext(hWnd))
 			{			

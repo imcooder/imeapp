@@ -36,7 +36,6 @@ extern LOGFONT lf;
 extern HFONT hFont;
 
 extern int nStatusHeight;
-extern BOOL fShowCand;
 extern DWORD  fdwProperty;
 
 extern DWORD  dwCompStrLen;
